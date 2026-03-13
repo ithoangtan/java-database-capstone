@@ -73,6 +73,31 @@ use prescriptions;
 db.prescriptions.find().limit(5).pretty();
 ```
 
+## 6. Lab 4 – Stored procedures
+
+Sau khi đã có database `cms` và dữ liệu (bước 1–3), tạo và chạy stored procedures:
+
+```bash
+# Tạo 3 stored procedures
+mysql -u root cms < scripts/stored_procedures.sql
+```
+
+Chạy và lấy output (để nộp bài):
+
+```bash
+mysql -u root cms < scripts/run_stored_procedures.sql
+```
+
+Hoặc trong MySQL CLI:
+
+```sql
+USE cms;
+SOURCE scripts/stored_procedures.sql;
+SOURCE scripts/run_stored_procedures.sql;
+```
+
+Lưu toàn bộ output terminal khi chạy `run_stored_procedures.sql` để nộp assignment.
+
 ## Ghi chú
 
 - Database **cms** được tạo bằng lệnh MySQL (bước 1), **không** tạo trong MongoDB CLI (câu hỏi 2 trong lab có thể nhầm MongoDB/MySQL).
