@@ -25,4 +25,6 @@ function renderContent() {
     window.location.href = "/"; // if no role, send to role selection page
     return;
   }
+  if (typeof renderHeader === "function") renderHeader();
+  if (typeof renderFooter === "function") renderFooter();
 }

@@ -99,3 +99,7 @@ export function openModal(type) {
     document.getElementById('doctorLoginBtn').addEventListener('click', doctorLoginHandler);
   }
 }
+
+if (typeof window !== 'undefined') {
+  window.openModal = openModal;
+}
