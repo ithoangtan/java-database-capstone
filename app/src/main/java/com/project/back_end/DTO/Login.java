@@ -1,30 +1,52 @@
 package com.project.back_end.DTO;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class Login {
-    
-// 1. 'email' field:
-//    - Type: private String
-//    - Description:
-//      - Represents the email address used for logging into the system.
-//      - The email field is expected to contain a valid email address for user authentication purposes.
 
-// 2. 'password' field:
-//    - Type: private String
-//    - Description:
-//      - Represents the password associated with the email address.
-//      - The password field is used for verifying the user's identity during login.
-//      - It is generally hashed before being stored and compared during authentication.
+    // 1. 'email' field:
+    //    - Type: private String
+    //    - Description:
+    //      - Represents the email address used for logging into the system.
+    //      - The email field is expected to contain a valid email address for user authentication purposes.
+    @NotBlank(message = "Email is required")
+    @Email(message = "Must be a valid email address")
+    private String email;
 
-// 3. Constructor:
-//    - No explicit constructor is defined for this class, as it relies on the default constructor provided by Java.
-//    - This class can be initialized with setters or directly via reflection, as per the application's needs.
+    // 2. 'password' field:
+    //    - Type: private String
+    //    - Description:
+    //      - Represents the password associated with the email address.
+    //      - The password field is used for verifying the user's identity during login.
+    //      - It is generally hashed before being stored and compared during authentication.
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    private String password;
 
-// 4. Getters and Setters:
-//    - Standard getter and setter methods are provided for both 'email' and 'password' fields.
-//    - The 'getEmail()' method allows access to the email value.
-//    - The 'setEmail(String email)' method sets the email value.
-//    - The 'getPassword()' method allows access to the password value.
-//    - The 'setPassword(String password)' method sets the password value.
+    // 3. Constructor:
+    //    - No explicit constructor is defined for this class, as it relies on the default constructor provided by Java.
+    //    - This class can be initialized with setters or directly via reflection, as per the application's needs.
+    // 4. Getters and Setters:
+    //    - Standard getter and setter methods are provided for both 'email' and 'password' fields.
+    //    - The 'getEmail()' method allows access to the email value.
+    //    - The 'setEmail(String email)' method sets the email value.
+    //    - The 'getPassword()' method allows access to the password value.
+    //    - The 'setPassword(String password)' method sets the password value.
+    public String getEmail() {
+        return email;
+    }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }
