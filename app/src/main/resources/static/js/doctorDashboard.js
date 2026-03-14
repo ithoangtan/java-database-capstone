@@ -5,7 +5,7 @@
 import { getAllAppointments } from "./services/appointmentRecordService.js";
 import { createPatientRow } from "./components/patientRows.js";
 
-/** Mặc định null để lần đầu vào hiển thị toàn bộ danh sách (all). */
+/** Default null so the first load shows the full list (all). */
 let selectedDate = "";
 let patientName = null;
 
@@ -18,7 +18,7 @@ function formatAppointmentDateTime(dateTime) {
   return s;
 }
 
-/** Lấy token: ưu tiên từ URL (/doctorDashboard/TOKEN), không có thì dùng localStorage. Đồng bộ token từ URL vào localStorage. */
+/** Get token: prefer URL (/doctorDashboard/TOKEN), else localStorage. Sync token from URL to localStorage. */
 function getToken() {
   const pathParts = window.location.pathname.split("/").filter(Boolean);
   if (pathParts[0] === "doctorDashboard" && pathParts[1] && pathParts[1].length > 50) {
@@ -50,15 +50,18 @@ function loadAppointments() {
       const appointments = data?.appointments || data || [];
       if (appointments.length === 0) {
         if (noRecord) {
+          const textEl = noRecord.querySelector(".empty-state-dynamic");
+          if (textEl) {
+            textEl.textContent = dateParam === "null"
+              ? "There are no appointments in the system."
+              : "No appointments for the selected date. Try another date.";
+          }
           noRecord.style.display = "block";
-          noRecord.textContent = dateParam === "null"
-            ? "No appointments found."
-            : "No appointments found for the selected date.";
         }
         return;
       }
       if (noRecord) noRecord.style.display = "none";
-      // Mỗi bệnh nhân chỉ hiển thị một dòng (lấy appointment mới nhất vì list đã sort DESC)
+      // One row per patient (latest appointment only; list is sorted DESC)
       const seenPatientIds = new Set();
       const uniqueByPatient = appointments.filter((apt) => {
         const patient = apt.patient || apt;
@@ -81,10 +84,11 @@ function loadAppointments() {
       console.error("Failed to load appointments:", err);
       tbody.innerHTML = "";
       if (noRecord) {
+        const titleEl = noRecord.querySelector(".empty-state-title");
+        const textEl = noRecord.querySelector(".empty-state-dynamic");
+        if (titleEl) titleEl.textContent = err && err.message === "Unauthorized" ? "Session expired" : "Something went wrong";
+        if (textEl) textEl.textContent = err && err.message === "Unauthorized" ? "Redirecting to login…" : "Error loading appointments. Try again later.";
         noRecord.style.display = "block";
-        noRecord.textContent = err && err.message === "Unauthorized"
-          ? "Session expired. Redirecting to login…"
-          : "Error loading appointments. Try again later.";
       }
       if (err && err.message === "Unauthorized") {
         setTimeout(() => { window.location.href = "/"; }, 1500);
@@ -100,7 +104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Mặc định ô ngày để trống → gửi "null" → API trả về toàn bộ appointments, sort mới nhất trên cùng
+  // Default empty date → send "null" → API returns all appointments, newest first
   if (datePicker) {
     datePicker.value = selectedDate;
     const onDateInputOrChange = () => {

@@ -29,7 +29,7 @@ public class AppointmentController {
         this.tokenService = tokenService;
     }
 
-    /** Trả về ngày mới nhất có lịch của doctor (để dashboard tự chọn ngày khi load). Đặt trước mapping tổng quát để Spring match đúng. */
+    /** Returns the latest appointment date for the doctor (dashboard uses it to preselect date on load). Placed before generic mapping so Spring matches correctly. */
     @GetMapping("/latestDate/{token}")
     public ResponseEntity<Map<String, Object>> getLatestAppointmentDate(@PathVariable String token) {
         if (!service.validateToken(token, "doctor").isEmpty()) {
@@ -148,6 +148,81 @@ public class AppointmentController {
         }
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Appointment booked successfully.", "id", saved.getId()));
+    }
+
+    /** Update appointment (patient). Token in path; body: id, doctor.id, patient.id, appointmentTime, status. */
+    @PutMapping("/{token}")
+    public ResponseEntity<Map<String, Object>> updateAppointment(
+            @PathVariable String token,
+            @RequestBody(required = false) Map<String, Object> body) {
+        if (!service.validateToken(token, "patient").isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid or expired token."));
+        }
+        if (body == null || body.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Request body is required (id, doctor, patient, appointmentTime)."));
+        }
+        Long appointmentId = null;
+        if (body.get("id") != null && !body.get("id").toString().isBlank()) {
+            try {
+                Object id = body.get("id");
+                appointmentId = id instanceof Number ? ((Number) id).longValue() : Long.parseLong(id.toString().trim());
+            } catch (NumberFormatException ignored) { }
+        }
+        Long doctorId = null;
+        Long patientId = null;
+        LocalDateTime appointmentTime = null;
+        int status = 0;
+        if (body.get("doctor") instanceof Map) {
+            Object id = ((Map<?, ?>) body.get("doctor")).get("id");
+            if (id != null && !id.toString().isBlank()) {
+                try {
+                    doctorId = id instanceof Number ? ((Number) id).longValue() : Long.parseLong(id.toString().trim());
+                } catch (NumberFormatException ignored) { }
+            }
+        }
+        if (body.get("patient") instanceof Map) {
+            Object id = ((Map<?, ?>) body.get("patient")).get("id");
+            if (id != null && !id.toString().isBlank()) {
+                try {
+                    patientId = id instanceof Number ? ((Number) id).longValue() : Long.parseLong(id.toString().trim());
+                } catch (NumberFormatException ignored) { }
+            }
+        }
+        if (body.get("appointmentTime") != null && !body.get("appointmentTime").toString().isBlank()) {
+            String timeStr = body.get("appointmentTime").toString().trim();
+            try {
+                appointmentTime = LocalDateTime.parse(timeStr);
+            } catch (DateTimeParseException e1) {
+                try {
+                    appointmentTime = LocalDateTime.parse(timeStr + ":00");
+                } catch (DateTimeParseException e2) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Invalid appointment time format. Use e.g. 2025-03-14T09:00:00"));
+                }
+            }
+        }
+        if (body.get("status") != null && body.get("status") instanceof Number) {
+            status = ((Number) body.get("status")).intValue();
+        }
+        if (appointmentId == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Appointment id is required."));
+        }
+        if (doctorId == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "doctor id is required."));
+        }
+        if (patientId == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "patient id is required."));
+        }
+        if (appointmentTime == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "appointmentTime is required (e.g. 2025-03-14T09:00:00)."));
+        }
+        Appointment updated = appointmentService.updateAppointment(appointmentId, patientId, doctorId, appointmentTime, status);
+        if (updated == null) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Appointment not found, access denied, or slot already taken."));
+        }
+        return ResponseEntity.ok(Map.of("message", "Appointment updated successfully.", "id", updated.getId()));
     }
 
 // 1. Set Up the Controller Class:

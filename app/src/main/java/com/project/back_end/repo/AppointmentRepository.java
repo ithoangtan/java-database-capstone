@@ -125,4 +125,12 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     /** True if an appointment already exists for this doctor, patient and time (no duplicate allowed). */
     boolean existsByDoctor_IdAndPatient_IdAndAppointmentTime(Long doctorId, Long patientId, LocalDateTime appointmentTime);
+
+    /** Count of other appointments (different id) for same doctor, patient and time (for update conflict check). */
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.patient.id = :patientId AND a.appointmentTime = :appointmentTime AND a.id <> :excludeId")
+    long countByDoctor_IdAndPatient_IdAndAppointmentTimeAndIdNot(
+            @Param("doctorId") Long doctorId,
+            @Param("patientId") Long patientId,
+            @Param("appointmentTime") LocalDateTime appointmentTime,
+            @Param("excludeId") Long excludeId);
 }

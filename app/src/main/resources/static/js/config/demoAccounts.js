@@ -1,5 +1,5 @@
 /**
- * Demo accounts (khớp với insert_data.sql) - mỗi lần mở form login random 1 tài khoản.
+ * Demo accounts (match insert_data.sql). One random account is filled when opening the login form.
  */
 export const ADMIN_ACCOUNTS = [
   { username: "admin", password: "admin@1234" },

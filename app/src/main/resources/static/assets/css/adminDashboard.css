@@ -1,85 +1,36 @@
-/* adminDashboard.css – Admin dashboard layout & controls */
-
-.main-content {
-  flex-grow: 1;
-  padding: var(--space-10, 40px) var(--space-6, 24px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--color-bg, #f8fafc);
-  min-height: calc(100vh - 64px);
-}
-
-.main-content .searchBar {
-  max-width: 420px;
-  margin-bottom: var(--space-4, 16px);
-}
-
-.main-content .filter-wrapper {
-  margin-bottom: var(--space-6, 24px);
-}
-
-.main-content h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text, #0f172a);
-  margin-bottom: var(--space-5, 20px);
-}
+/* adminDashboard.css – Admin-specific (layout from style.css) */
 
 #content {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  animation: pageTitleFadeIn 0.4s ease-out 0.1s backwards;
 }
 
-/* Admin-specific button (e.g. Add Doctor in header) */
-.adminBtn {
-  padding: var(--space-2, 8px) var(--space-4, 16px);
-  font-size: 0.875rem;
-  font-weight: 600;
-  border-radius: var(--radius-md, 8px);
-  border: 1px solid var(--color-border, #e2e8f0);
-  background: var(--color-bg-card, #fff);
-  color: var(--color-text, #0f172a);
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+/* Stagger doctor cards on admin/patient dashboards */
+#content .doctor-card {
+  animation: pageTitleFadeIn 0.4s ease-out backwards;
 }
 
-.adminBtn:hover {
-  border-color: var(--color-primary, #0d9488);
-  color: var(--color-primary, #0d9488);
-  background: var(--color-primary-light, #ccfbf1);
-}
+#content .doctor-card:nth-child(1) { animation-delay: 0.08s; }
+#content .doctor-card:nth-child(2) { animation-delay: 0.14s; }
+#content .doctor-card:nth-child(3) { animation-delay: 0.2s; }
+#content .doctor-card:nth-child(4) { animation-delay: 0.26s; }
+#content .doctor-card:nth-child(5) { animation-delay: 0.32s; }
+#content .doctor-card:nth-child(6) { animation-delay: 0.38s; }
+#content .doctor-card:nth-child(n+7) { animation-delay: 0.44s; }
 
 .modal-content {
   max-width: 440px;
 }
 
-/* Validation/error message in Add Doctor modal */
 .modal-content .error-message {
   display: none;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 0.75rem;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
   background: #fef2f2;
-  color: #b91c1c;
+  color: var(--color-danger);
   border: 1px solid #fecaca;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 0.875rem;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding: var(--space-6, 24px) var(--space-4, 16px);
-  }
-
-  .filter-wrapper {
-    flex-direction: column;
-    width: 100%;
-    max-width: 400px;
-  }
-
-  .filter-select {
-    width: 100%;
-    min-width: 0;
-  }
 }

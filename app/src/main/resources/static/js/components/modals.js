@@ -6,11 +6,17 @@ import {
 } from "../config/demoAccounts.js";
 
 export function openModal(type) {
+  const modalEl = document.getElementById("modal");
+  const contentBox = modalEl?.querySelector(".modal-content");
+  if (contentBox) contentBox.classList.remove("modal-content--wide");
+
   let modalContent = '';
   if (type === 'addDoctor') {
+    if (contentBox) contentBox.classList.add("modal-content--wide");
     modalContent = `
          <h2>Add Doctor</h2>
          <div id="addDoctorErrorMessage" class="error-message" role="alert" aria-live="polite"></div>
+         <div class="modal-form">
          <input type="text" id="doctorName" placeholder="Doctor Name" class="input-field">
          <select id="specialization" class="input-field select-dropdown">
              <option value="">Specialization</option>
@@ -43,50 +49,66 @@ export function openModal(type) {
           </div>
         </div>
         <button class="dashboard-btn" id="saveDoctorBtn">Save</button>
+         </div>
       `;
   } else if (type === 'patientLogin') {
     modalContent = `
         <h2>Patient Login</h2>
+        <div class="modal-form">
+        <label for="email" class="modal-label">Email</label>
         <input type="text" id="email" placeholder="Email" class="input-field">
+        <label for="password" class="modal-label">Password</label>
         <input type="password" id="password" placeholder="Password" class="input-field">
         <button class="dashboard-btn" id="loginBtn">Login</button>
+        </div>
       `;
   }
   else if (type === "patientSignup") {
     modalContent = `
       <h2>Patient Signup</h2>
+      <div class="modal-form">
+      <label for="name" class="modal-label">Name</label>
       <input type="text" id="name" placeholder="Name" class="input-field">
+      <label for="email" class="modal-label">Email</label>
       <input type="email" id="email" placeholder="Email" class="input-field">
+      <label for="password" class="modal-label">Password</label>
       <input type="password" id="password" placeholder="Password" class="input-field">
+      <label for="phone" class="modal-label">Phone</label>
       <input type="text" id="phone" placeholder="Phone" class="input-field">
+      <label for="address" class="modal-label">Address</label>
       <input type="text" id="address" placeholder="Address" class="input-field">
       <button class="dashboard-btn" id="signupBtn">Signup</button>
+      </div>
     `;
 
   } else if (type === 'adminLogin') {
     modalContent = `
         <h2>Admin Login</h2>
+        <div class="modal-form">
         <label for="username" class="modal-label">Username</label>
         <input type="text" id="username" name="username" placeholder="Username" class="input-field" required>
         <label for="password" class="modal-label">Password</label>
         <input type="password" id="password" name="password" placeholder="Password" class="input-field" required>
         <button class="dashboard-btn" id="adminLoginBtn">Login</button>
+        </div>
       `;
   } else if (type === 'doctorLogin') {
     modalContent = `
         <h2>Doctor Login</h2>
+        <div class="modal-form">
         <label for="email" class="modal-label">Email</label>
         <input type="email" id="email" placeholder="Email" class="input-field" required>
         <label for="password" class="modal-label">Password</label>
         <input type="password" id="password" placeholder="Password" class="input-field" required>
         <button class="dashboard-btn" id="doctorLoginBtn">Login</button>
+        </div>
       `;
   }
 
   document.getElementById('modal-body').innerHTML = modalContent;
   document.getElementById('modal').style.display = 'block';
 
-  // Mỗi lần mở form login: điền random 1 tài khoản từ mảng (admin / doctor / patient)
+  // On each login form open: fill a random account from the array (admin / doctor / patient)
   if (type === "adminLogin") {
     const acc = getRandomAdminAccount();
     const u = document.getElementById("username");

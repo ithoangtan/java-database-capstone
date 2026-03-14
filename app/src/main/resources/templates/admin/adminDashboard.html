@@ -6,8 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="icon" type="image/png" th:href="@{/assets/images/logo/logo.png}" />
-    <link rel="stylesheet" th:href="@{/assets/css/adminDashboard.css}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/assets/css/style.css}" />
+    <link rel="stylesheet" th:href="@{/assets/css/adminDashboard.css}" />
     <script th:src="@{/js/render.js}" defer></script>
     <script th:src="@{/js/util.js}" defer></script>
     <script th:src="@{/js/components/header.js}" defer></script>
@@ -19,6 +22,8 @@
         <div class="wrapper">
             <div id="header"></div>
             <main class="main-content">
+                <h1 class="page-title">Doctors</h1>
+                <p class="page-subtitle">Search and manage doctors. Use filters to find by specialty or time.</p>
                 <input type="text" id="searchBar" class="searchBar" placeholder="Search by doctor name" />
                 <div class="filter-wrapper">
                     <select class="filter-select" id="filterTime">

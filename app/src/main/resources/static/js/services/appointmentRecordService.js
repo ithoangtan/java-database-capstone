@@ -2,7 +2,7 @@
 import { API_BASE_URL } from "../config/config.js";
 const APPOINTMENT_API = `${API_BASE_URL}/appointments`;
 
-/** Lấy ngày mới nhất có lịch của doctor (để dashboard tự chọn ngày khi load). Trả về chuỗi YYYY-MM-DD hoặc null. */
+/** Get the latest appointment date for the doctor (dashboard uses it to preselect date on load). Returns YYYY-MM-DD string or null. */
 export async function getLatestAppointmentDate(token) {
   const response = await fetch(`${APPOINTMENT_API}/latestDate/${token}`);
   if (!response.ok) return null;

@@ -3,11 +3,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/svg+xml" href="../assets/images/logo/logo.png" />
-    <title>LoggedPatientDashboard</title>
-    <link rel = "stylesheet" href = "../assets/css/adminDashboard.css">
-    <link rel = "stylesheet" href = "../assets/css/style.css">
-    <link rel = "stylesheet" href = "../assets/css/patientDashboard.css">
+    <link rel="icon" type="image/png" href="../assets/images/logo/logo.png" />
+    <title>Patient Dashboard – Find a Doctor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/adminDashboard.css">
+    <link rel="stylesheet" href="../assets/css/patientDashboard.css">
     <script src = "../js/render.js" defer></script>
     <script src = "../js/util.js" defer></script>
     <script src = "../js/components/header.js" defer></script>
@@ -19,7 +22,9 @@
         <div class="wrapper">
             <div id="header"></div>
             <main class="main-content">
-                <input type="text" id="searchBar" class="searchBar" placeholder="Search Bar for custom output" />
+                <h1 class="page-title">Find a Doctor</h1>
+                <p class="page-subtitle">Browse doctors by specialty and availability. Book an appointment from a card.</p>
+                <input type="text" id="searchBar" class="searchBar" placeholder="Search by doctor name or specialty" />
                 <div class="filter-wrapper">
                     <select class="filter-select" id="filterTime">
                         <option value="">Sort by Time</option>

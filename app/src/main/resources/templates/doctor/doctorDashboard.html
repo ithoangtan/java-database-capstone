@@ -6,9 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doctor Dashboard</title>
     <link rel="icon" type="image/png" th:href="@{/assets/images/logo/logo.png}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/assets/css/style.css}" />
     <link rel="stylesheet" th:href="@{/assets/css/adminDashboard.css}" />
     <link rel="stylesheet" th:href="@{/assets/css/doctorDashboard.css}" />
-    <link rel="stylesheet" th:href="@{/assets/css/style.css}" />
     <script th:src="@{/js/render.js}" defer></script>
     <script th:src="@{/js/util.js}" defer></script>
     <script th:src="@{/js/components/header.js}" defer></script>
@@ -21,6 +24,8 @@
         <div class="wrapper">
             <div id="header"></div>
             <main class="main-content">
+                <h1 class="page-title">Appointments</h1>
+                <p class="page-subtitle">View and manage today's appointments. Search by patient or pick a date.</p>
                 <input type="text" id="searchBar" class="searchBar" placeholder="Search by patient name" />
                 <div class="filter-wrapper doctor-filters">
                     <button type="button" id="todayButton" class="today-btn">Today's Appointments</button>
@@ -39,7 +44,11 @@
                     </thead>
                     <tbody id="patientTableBody"></tbody>
                 </table>
-                <p id="noPatientRecord" class="noPatientRecord" style="display: none;">No patient records found.</p>
+                <div id="noPatientRecord" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon" aria-hidden="true">∅</div>
+                    <p class="empty-state-title">No appointments found</p>
+                    <p class="empty-state-text empty-state-dynamic">No patient records for the selected date.</p>
+                </div>
             </main>
             <div id="footer"></div>
         </div>

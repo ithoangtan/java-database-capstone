@@ -86,11 +86,11 @@ export function showBookingOverlay(e, doctor, patient) {
     const time = (modalApp.querySelector("#appointment-time").value || "").trim();
 
     if (!date) {
-      errorEl.textContent = "Vui lòng chọn ngày hẹn.";
+      errorEl.textContent = "Please select an appointment date.";
       return;
     }
     if (!time) {
-      errorEl.textContent = "Vui lòng chọn khung giờ.";
+      errorEl.textContent = "Please select a time slot.";
       return;
     }
 
@@ -98,26 +98,26 @@ export function showBookingOverlay(e, doctor, patient) {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     if (selectedDate < todayStart) {
-      errorEl.textContent = "Không thể đặt lịch trong quá khứ. Vui lòng chọn ngày hôm nay hoặc sau.";
+      errorEl.textContent = "Cannot book in the past. Please select today or a future date.";
       return;
     }
 
     const startTime = time.split("-")[0].trim();
     if (!startTime) {
-      errorEl.textContent = "Vui lòng chọn khung giờ hợp lệ.";
+      errorEl.textContent = "Please select a valid time slot.";
       return;
     }
 
     const doctorId = doctor.id != null ? Number(doctor.id) : null;
     const patientId = patient.id != null ? Number(patient.id) : null;
     if (doctorId == null || isNaN(doctorId) || patientId == null || isNaN(patientId)) {
-      errorEl.textContent = "Dữ liệu bác sĩ hoặc bệnh nhân không hợp lệ. Vui lòng tải lại trang.";
+      errorEl.textContent = "Invalid doctor or patient data. Please refresh the page.";
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-      errorEl.textContent = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+      errorEl.textContent = "Session expired. Please log in again.";
       return;
     }
 
@@ -132,11 +132,11 @@ export function showBookingOverlay(e, doctor, patient) {
     const { success, message } = await bookAppointment(appointment, token);
 
     if (success) {
-      alert("Đặt lịch thành công.");
+      alert("Appointment booked successfully.");
       ripple.remove();
       modalApp.remove();
     } else {
-      errorEl.textContent = message || "Đặt lịch thất bại. Vui lòng thử lại.";
+      errorEl.textContent = message || "Booking failed. Please try again.";
     }
   });
 }

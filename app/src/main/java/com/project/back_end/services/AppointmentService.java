@@ -51,7 +51,7 @@ public class AppointmentService {
         return appointmentRepository.findByDoctorIdAndAppointmentTimeBetween(doctor.getId(), start, end);
     }
 
-    /** Ngày mới nhất có ít nhất một appointment của doctor (theo DB). */
+    /** Latest date that has at least one appointment for the doctor (from DB). */
     @Transactional(readOnly = true)
     public Optional<LocalDate> getLatestAppointmentDateForDoctor(String doctorEmail) {
         Doctor doctor = doctorRepository.findByEmail(doctorEmail);
@@ -92,5 +92,30 @@ public class AppointmentService {
     @Transactional(readOnly = true)
     public boolean hasExistingAppointment(Long doctorId, Long patientId, LocalDateTime appointmentTime) {
         return appointmentRepository.existsByDoctor_IdAndPatient_IdAndAppointmentTime(doctorId, patientId, appointmentTime);
+    }
+
+    /**
+     * Update an existing appointment (date/time). Only the patient who owns the appointment may update.
+     * Rejects if another appointment already exists for same (doctor, patient, time) with a different id.
+     */
+    @Transactional
+    public Appointment updateAppointment(Long appointmentId, Long patientId, Long doctorId, LocalDateTime appointmentTime, int status) {
+        Optional<Appointment> opt = appointmentRepository.findById(appointmentId);
+        if (opt.isEmpty()) return null;
+        Appointment appointment = opt.get();
+        if (!appointment.getPatient().getId().equals(patientId)) {
+            return null; // not allowed to update another patient's appointment
+        }
+        Doctor doctor = doctorRepository.findById(doctorId).orElse(null);
+        Patient patient = patientRepository.findById(patientId).orElse(null);
+        if (doctor == null || patient == null) return null;
+        if (appointmentRepository.countByDoctor_IdAndPatient_IdAndAppointmentTimeAndIdNot(doctorId, patientId, appointmentTime, appointmentId) > 0) {
+            return null; // duplicate slot
+        }
+        appointment.setDoctor(doctor);
+        appointment.setPatient(patient);
+        appointment.setAppointmentTime(appointmentTime);
+        appointment.setStatus(status);
+        return appointmentRepository.save(appointment);
     }
 }

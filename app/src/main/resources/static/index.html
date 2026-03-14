@@ -6,25 +6,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Role - Clinic Management System</title>
     <link rel="icon" type="image/png" href="assets/images/logo/logo.png" />
-    <link rel="stylesheet" href="assets/css/index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/index.css">
     <script src="js/util.js" defer></script>
     <script src="js/render.js" defer></script>
     <script src="js/components/header.js" defer></script>
     <script src="js/components/footer.js" defer></script>
 </head>
 
-<body>
+<body class="index-page">
     <div class="container">
         <div class="wrapper">
             <div id="header"></div>
             <main class="main-content">
-                <h2>Select Your Role</h2>
-                <div class="role-buttons">
-                    <button type="button" id="adminBtn" class="dashboard-btn" onclick="handleRoleSelect('admin')">Admin</button>
-                    <button type="button" id="doctorBtn" class="dashboard-btn" onclick="handleRoleSelect('doctor')">Doctor</button>
-                    <button type="button" id="patientBtn" class="dashboard-btn" onclick="handleRoleSelect('patient')">Patient</button>
-                </div>
+                <section class="hero">
+                    <h1 class="hero-title">Clinic Management System</h1>
+                    <p class="hero-subtitle">Choose your role to get started — manage appointments, doctors and patients in one platform.</p>
+                </section>
+                <section class="role-cards">
+                    <article class="role-card" data-role="admin">
+                        <span class="role-card-icon" aria-hidden="true">⚙</span>
+                        <h3 class="role-card-title">Admin</h3>
+                        <p class="role-card-desc">Manage the system, doctors and configuration.</p>
+                        <button type="button" id="adminBtn" class="role-card-btn dashboard-btn" onclick="handleRoleSelect('admin')">Admin Login</button>
+                    </article>
+                    <article class="role-card" data-role="doctor">
+                        <span class="role-card-icon" aria-hidden="true">🩺</span>
+                        <h3 class="role-card-title">Doctor</h3>
+                        <p class="role-card-desc">View schedule, write prescriptions and patient records.</p>
+                        <button type="button" id="doctorBtn" class="role-card-btn dashboard-btn" onclick="handleRoleSelect('doctor')">Doctor Login</button>
+                    </article>
+                    <article class="role-card" data-role="patient">
+                        <span class="role-card-icon" aria-hidden="true">👤</span>
+                        <h3 class="role-card-title">Patient</h3>
+                        <p class="role-card-desc">Book appointments and view your records.</p>
+                        <button type="button" id="patientBtn" class="role-card-btn dashboard-btn" onclick="handleRoleSelect('patient')">Go to Patient Page</button>
+                    </article>
+                </section>
             </main>
             <div id="footer"></div>
         </div>

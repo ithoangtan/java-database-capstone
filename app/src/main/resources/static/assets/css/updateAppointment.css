@@ -1,89 +1,37 @@
-/* This is the style sheet for the updateAppointment.html */
+/* updateAppointment.css – form-specific (uses style.css form-container & buttons) */
+
 .form-container {
-    max-width: 600px;
-    background: #ffffffc8;
-    margin: 10px auto;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    animation: fadeIn 0.5s ease-in-out;
-  }
+  max-width: 560px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
 
-  .container h2 {
-    text-align: center;
-    color: #222;
-    font-size: 28px;
-    margin-bottom: 25px;
-  }
+.form-container h2 {
+  letter-spacing: -0.02em;
+}
 
-  .container h2 span {
-    color: #A62B1F;
-  }
+.form-container #patientName,
+.form-container #doctorName {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
 
-  label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 500;
-    color: #333;
-    text-align: left;
-    font-size: 13px;
-  }
+.form-container .input-field {
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
 
-  input, textarea ,select {
-    width: 100%;
-    padding: 12px;
-    resize: vertical;
-    margin-bottom: 20px;
-    border: 1px solid #cccccc6e;
-    border-radius: 8px;
-    font-size: 15px;
-    outline: none;
-    transition: 0.3s;
-    font-family: "Verdana";
-  }
+.form-container .input-field:hover {
+  border-color: var(--color-text-muted);
+}
 
-  input:focus, textarea:focus {
-    border-color: #015c5d;
-    box-shadow: 0 0 4px #a7f3d0;
-    filter: brightness(1.5);
-  }
+.form-container select {
+  cursor: pointer;
+}
 
-  #patientName{
-    background-color: #bdbcbc80;
-  }
-  .btn-primary {
-    background-color: #047857;
-    color: #fff;
-    padding: 14px;
-    width: 100%;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: 0.3s;
-  }
+.form-container .btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
+}
 
-  .btn-primary:hover {
-    background-color: #065f46;
-  }
-
-  .btn-secondary {
-    background-color: transparent;
-    color: #333;
-    border: 1px solid #ccc;
-    padding: 12px;
-    width: 100%;
-    border-radius: 8px;
-    font-size: 15px;
-    margin-top: 12px;
-    cursor: pointer;
-  }
-
-  .btn-secondary:hover{
-    color: #fff;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+.form-container .btn-secondary:hover {
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.15);
+}

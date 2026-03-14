@@ -11,13 +11,30 @@ function openModal(type) {
   }
 }
 
+function getEmptyStateHTML(title, text) {
+  return `
+    <div class="empty-state">
+      <div class="empty-state-icon" aria-hidden="true">∅</div>
+      <p class="empty-state-title">${title || "No results"}</p>
+      <p class="empty-state-text">${text || ""}</p>
+    </div>`;
+}
+
 function loadDoctorCards() {
   getDoctors()
     .then((doctors) => {
       const contentDiv = document.getElementById("content");
       if (!contentDiv) return;
       contentDiv.innerHTML = "";
-      (doctors || []).forEach((doctor) => {
+      const list = doctors || [];
+      if (list.length === 0) {
+        contentDiv.innerHTML = getEmptyStateHTML(
+          "No doctors yet",
+          "Add a doctor using the Add Doctor button above."
+        );
+        return;
+      }
+      list.forEach((doctor) => {
         const card = createDoctorCard(doctor);
         contentDiv.appendChild(card);
       });
@@ -46,7 +63,10 @@ function filterDoctorsOnChange() {
           contentDiv.appendChild(createDoctorCard(doctor));
         });
       } else {
-        contentDiv.innerHTML = "<p>No doctors found with the given filters.</p>";
+        contentDiv.innerHTML = getEmptyStateHTML(
+          "No doctors found",
+          "Try different search or filter criteria."
+        );
       }
     })
     .catch((error) => {
