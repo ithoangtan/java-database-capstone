@@ -1,6 +1,31 @@
 package com.project.back_end.services;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+@org.springframework.stereotype.Service
 public class Service {
+
+    private final TokenService tokenService;
+
+    public Service(TokenService tokenService) {
+        this.tokenService = tokenService;
+    }
+
+    /**
+     * Validates the token for the given role. Returns an empty map if valid,
+     * or a map with error details if invalid (for use by MVC controllers).
+     */
+    public Map<String, Object> validateToken(String token, String role) {
+        if (tokenService.isTokenValidForRole(token, role)) {
+            return Collections.emptyMap();
+        }
+        Map<String, Object> errors = new HashMap<>();
+        errors.put("error", "Invalid or expired token");
+        return errors;
+    }
+
 // 1. **@Service Annotation**
 // The @Service annotation marks this class as a service component in Spring. This allows Spring to automatically detect it through component scanning
 // and manage its lifecycle, enabling it to be injected into controllers or other services using @Autowired or constructor injection.
