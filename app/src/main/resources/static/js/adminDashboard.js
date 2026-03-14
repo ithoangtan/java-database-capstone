@@ -65,6 +65,12 @@ export function renderDoctorCards(doctors) {
 }
 
 window.adminAddDoctor = async function () {
+  const errorEl = document.getElementById("addDoctorErrorMessage");
+  if (errorEl) {
+    errorEl.textContent = "";
+    errorEl.style.display = "none";
+  }
+
   const name = document.getElementById("doctorName")?.value?.trim();
   const email = document.getElementById("doctorEmail")?.value?.trim();
   const phone = document.getElementById("doctorPhone")?.value?.trim();
@@ -74,13 +80,13 @@ window.adminAddDoctor = async function () {
   const availableTimes = Array.from(checkboxes).map((cb) => cb.value);
 
   if (!name || !email || !password) {
-    alert("Please fill in name, email, and password.");
+    showAddDoctorError("Please fill in name, email, and password.");
     return;
   }
 
   const token = localStorage.getItem("token");
   if (!token) {
-    alert("Session expired. Please log in again.");
+    showAddDoctorError("Session expired. Please log in again.");
     return;
   }
 
@@ -95,13 +101,23 @@ window.adminAddDoctor = async function () {
 
   const result = await saveDoctor(doctor, token);
   if (result.success) {
-    alert(result.message || "Doctor added successfully.");
+    if (errorEl) errorEl.style.display = "none";
     document.getElementById("modal").style.display = "none";
     loadDoctorCards();
   } else {
-    alert(result.message || "Failed to add doctor.");
+    showAddDoctorError(result.message || "Failed to add doctor.");
   }
 };
+
+function showAddDoctorError(message) {
+  const errorEl = document.getElementById("addDoctorErrorMessage");
+  if (errorEl) {
+    errorEl.textContent = message;
+    errorEl.style.display = "block";
+  } else {
+    alert(message);
+  }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   loadDoctorCards();

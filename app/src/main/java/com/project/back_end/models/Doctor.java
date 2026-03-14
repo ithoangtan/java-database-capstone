@@ -88,7 +88,8 @@ public class Doctor {
     //      - Represents the available times for the doctor in a list of time slots.
     //      - Each time slot is represented as a string (e.g., "09:00-10:00", "10:00-11:00").
     //      - The @ElementCollection annotation ensures that the list of time slots is stored as a separate collection in the database (structured JPA technique, not a plain list).
-    @ElementCollection
+    //      - FetchType.EAGER so that when Doctor is loaded (e.g. with Appointment), the collection is loaded in the same session and can be serialized to JSON without lazy-init errors.
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "doctor_available_times", joinColumns = @JoinColumn(name = "doctor_id"))
     @Column(name = "time_slot")
     private List<String> availableTimes = new ArrayList<>();

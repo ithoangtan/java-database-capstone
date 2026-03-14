@@ -85,6 +85,14 @@
     color: #fff;
   }
 
+  .required { color: #A62B1F; }
+  .hint { font-size: 12px; color: #666; margin-top: -12px; margin-bottom: 12px; display: block; }
+  .field-error { font-size: 12px; color: #A62B1F; margin-top: -12px; margin-bottom: 12px; display: block; }
+  .form-error { background: #fef2f2; color: #A62B1F; padding: 10px; border-radius: 8px; margin-bottom: 16px; display: none; }
+  .form-error.visible { display: block; }
+  input:invalid.touched, textarea:invalid.touched { border-color: #A62B1F; }
+  input.invalid, textarea.invalid { border-color: #A62B1F; }
+
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(30px); }
     to   { opacity: 1; transform: translateY(0); }

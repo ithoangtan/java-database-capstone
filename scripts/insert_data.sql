@@ -82,8 +82,12 @@ INSERT INTO patient (address, email, name, password, phone) VALUES
 ('125 Juniper Ct, Greenwood', 'leo.m@example.com', 'Leo Martin', 'leopass', '8904444444'),
 ('126 Olive Rd, Ashville', 'ella.moore@example.com', 'Ella Moore', 'ellamoore', '8905555555');
 
+-- Sample appointments: 2 different patients (different id, name, email, phone), same doctor, different times
+-- Patient 1: Jane Doe (jane.doe@example.com, 8881111111) at 09:00
+-- Patient 2: John Smith (john.smith@example.com, 8882222222) at 10:00
 INSERT INTO appointment (appointment_time, status, doctor_id, patient_id) VALUES
 ('2025-05-01 09:00:00.000000', 0, 1, 1),
+('2025-05-01 10:00:00.000000', 0, 1, 2),
 ('2025-05-02 10:00:00.000000', 0, 1, 2),
 ('2025-05-03 11:00:00.000000', 0, 1, 3),
 ('2025-05-04 14:00:00.000000', 0, 1, 4),

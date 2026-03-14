@@ -5,6 +5,7 @@
 import { deleteDoctor } from "../services/doctorServices.js";
 import { getPatientData } from "../services/patientServices.js";
 import { showBookingOverlay } from "../loggedPatient.js";
+import { openModal } from "./modals.js";
 
 export function createDoctorCard(doctor) {
   const card = document.createElement("div");
@@ -60,11 +61,12 @@ export function createDoctorCard(doctor) {
       }
     });
     actionsDiv.appendChild(removeBtn);
-  } else if (role === "patient") {
+  } else if (role === "patient" || !role) {
+    // Guest / chưa đăng nhập: bấm Book Now → mở modal Login để đăng nhập hoặc đăng ký
     const bookNow = document.createElement("button");
     bookNow.textContent = "Book Now";
     bookNow.addEventListener("click", () => {
-      alert("Patient needs to login first.");
+      openModal("patientLogin");
     });
     actionsDiv.appendChild(bookNow);
   } else if (role === "loggedPatient") {

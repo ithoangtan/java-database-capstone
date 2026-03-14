@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../assets/css/adminDashboard.css">
   <link rel="stylesheet" href="../assets/css/doctorDashboard.css">
   <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/patientAppointments.css">
   <script src="../js/render.js" defer></script>
   <script src="../js/util.js" defer></script>
   <script src="../js/components/header.js" defer></script>
@@ -20,23 +21,28 @@
   <div class="container">
     <div class="wrapper">
       <div id="header"></div>
-      <div class="main-content">
-        <h2>Patient <span>Appointment</span></h2>
-        <input type="text" id="searchBar" class="searchBar" placeholder="Search Bar for custom output" />
-                <div class="filter-wrapper">
-                    <select class="filter-select" id="appointmentFilter">
-                        <option value="allAppointments">All Appointments</option>
-                        <option value="future">Upcoming Appointments</option>
-                        <option value="past">Past Appointments</option>
-                    </select>
-                </div>
+      <div class="main-content patient-appointments-page">
+        <h1 class="page-title">My Appointments</h1>
+        <p class="page-subtitle">View and manage your scheduled appointments.</p>
+        <div class="toolbar">
+          <input type="text" id="searchBar" class="searchBar" placeholder="Search by doctor name..." />
+          <div class="filter-wrapper">
+            <select class="filter-select" id="appointmentFilter">
+              <option value="allAppointments">All Appointments</option>
+              <option value="future">Upcoming</option>
+              <option value="past">Past</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-card">
         <table id="patientTable">
           <thead class="table-header">
             <tr>
-              <th>Patient Name</th>
-              <th>Doctor Name</th>
+              <th>Patient</th>
+              <th>Doctor</th>
               <th>Date</th>
               <th>Time</th>
+              <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -44,6 +50,7 @@
             <!-- rows will be inserted here dynamically -->
           </tbody>
         </table>
+        </div>
       </div>
       <div id="footer"></div>
     </div>

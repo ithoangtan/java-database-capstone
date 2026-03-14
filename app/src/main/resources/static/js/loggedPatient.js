@@ -38,50 +38,115 @@ export function showBookingOverlay(e, doctor, patient) {
 
   setTimeout(() => ripple.classList.add("active"), 50);
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const modalApp = document.createElement("div");
   modalApp.classList.add("modalApp");
 
   modalApp.innerHTML = `
-    <h2>Book Appointment</h2>
-    <input class="input-field" type="text" value="${patient.name}" disabled />
-    <input class="input-field" type="text" value="${doctor.name}" disabled />
-    <input class="input-field" type="text" value="${doctor.specialty}" disabled/>
-    <input class="input-field" type="email" value="${doctor.email}" disabled/>
-    <input class="input-field" type="date" id="appointment-date" />
-    <select class="input-field" id="appointment-time">
+    <div class="modalApp-header">
+      <h2>Book Appointment</h2>
+      <button type="button" class="modalApp-close" aria-label="Close">×</button>
+    </div>
+    <input class="input-field" type="text" value="${escapeHtml(patient.name)}" disabled />
+    <input class="input-field" type="text" value="${escapeHtml(doctor.name)}" disabled />
+    <input class="input-field" type="text" value="${escapeHtml(doctor.specialty || '')}" disabled/>
+    <input class="input-field" type="email" value="${escapeHtml(doctor.email || '')}" disabled/>
+    <input class="input-field" type="date" id="appointment-date" min="${today}" required />
+    <select class="input-field" id="appointment-time" required>
       <option value="">Select time</option>
-      ${doctor.availableTimes.map(t => `<option value="${t}">${t}</option>`).join('')}
+      ${(doctor.availableTimes || []).map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
     </select>
-    <button class="confirm-booking">Confirm Booking</button>
+    <p id="booking-error" class="booking-error" role="alert" aria-live="polite"></p>
+    <button type="button" class="confirm-booking">Confirm Booking</button>
   `;
 
   document.body.appendChild(modalApp);
 
+  const dateInput = modalApp.querySelector("#appointment-date");
+  dateInput.value = today;
+
   setTimeout(() => modalApp.classList.add("active"), 600);
 
+  function closeModal() {
+    modalApp.classList.remove("active");
+    setTimeout(() => {
+      modalApp.remove();
+      ripple.remove();
+    }, 300);
+  }
+
+  modalApp.querySelector(".modalApp-close").addEventListener("click", closeModal);
+
   modalApp.querySelector(".confirm-booking").addEventListener("click", async () => {
-    const date = modalApp.querySelector("#appointment-date").value;
-    const time = modalApp.querySelector("#appointment-time").value;
+    const errorEl = modalApp.querySelector("#booking-error");
+    errorEl.textContent = "";
+
+    const date = (modalApp.querySelector("#appointment-date").value || "").trim();
+    const time = (modalApp.querySelector("#appointment-time").value || "").trim();
+
+    if (!date) {
+      errorEl.textContent = "Vui lòng chọn ngày hẹn.";
+      return;
+    }
+    if (!time) {
+      errorEl.textContent = "Vui lòng chọn khung giờ.";
+      return;
+    }
+
+    const selectedDate = new Date(date + "T00:00:00");
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    if (selectedDate < todayStart) {
+      errorEl.textContent = "Không thể đặt lịch trong quá khứ. Vui lòng chọn ngày hôm nay hoặc sau.";
+      return;
+    }
+
+    const startTime = time.split("-")[0].trim();
+    if (!startTime) {
+      errorEl.textContent = "Vui lòng chọn khung giờ hợp lệ.";
+      return;
+    }
+
+    const doctorId = doctor.id != null ? Number(doctor.id) : null;
+    const patientId = patient.id != null ? Number(patient.id) : null;
+    if (doctorId == null || isNaN(doctorId) || patientId == null || isNaN(patientId)) {
+      errorEl.textContent = "Dữ liệu bác sĩ hoặc bệnh nhân không hợp lệ. Vui lòng tải lại trang.";
+      return;
+    }
+
     const token = localStorage.getItem("token");
-    const startTime = time.split('-')[0];
+    if (!token) {
+      errorEl.textContent = "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.";
+      return;
+    }
+
+    const appointmentTimeStr = startTime.length <= 5 ? `${date}T${startTime}:00` : `${date}T${startTime}`;
     const appointment = {
-      doctor: { id: doctor.id },
-      patient: { id: patient.id },
-      appointmentTime: `${date}T${startTime}:00`,
+      doctor: { id: doctorId },
+      patient: { id: patientId },
+      appointmentTime: appointmentTimeStr,
       status: 0
     };
-
 
     const { success, message } = await bookAppointment(appointment, token);
 
     if (success) {
-      alert("Appointment Booked successfully");
+      alert("Đặt lịch thành công.");
       ripple.remove();
       modalApp.remove();
     } else {
-      alert("❌ Failed to book an appointment :: " + message);
+      errorEl.textContent = message || "Đặt lịch thất bại. Vui lòng thử lại.";
     }
   });
+}
+
+function escapeHtml(str) {
+  if (str == null) return "";
+  const s = String(str);
+  const div = document.createElement("div");
+  div.textContent = s;
+  return div.innerHTML;
 }
 
 

@@ -14,15 +14,24 @@ import java.util.Map;
 public class ValidationFailed {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        
-        // Iterate through all the validation errors
+    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
+        Map<String, String> fieldErrors = new HashMap<>();
+        String firstMessage = null;
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            String errorMessage = error.getDefaultMessage();
-            errors.put("message", "" + errorMessage);
+            String msg = error.getDefaultMessage();
+            fieldErrors.put(error.getField(), msg != null ? msg : "Invalid");
+            if (firstMessage == null) firstMessage = msg;
         }
+        Map<String, Object> body = new HashMap<>();
+        body.put("errors", fieldErrors);
+        body.put("message", firstMessage != null ? firstMessage : "Validation failed.");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleException(Exception ex) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred.";
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", message));
     }
 }

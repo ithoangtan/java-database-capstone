@@ -50,12 +50,17 @@ window.adminLoginHandler = async function () {
   }
 };
 
+const EMAIL_REGEX = /^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 window.doctorLoginHandler = async function () {
   try {
     const email = document.getElementById("email")?.value?.trim();
     const password = document.getElementById("password")?.value;
     if (!email || !password) {
       alert("Please enter email and password.");
+      return;
+    }
+    if (!EMAIL_REGEX.test(email)) {
+      alert("Please enter a valid email address.");
       return;
     }
     const response = await fetch(`${DOCTOR_API}/login`, {

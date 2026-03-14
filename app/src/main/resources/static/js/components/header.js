@@ -11,10 +11,10 @@ function renderHeader() {
     localStorage.removeItem("token");
     headerDiv.innerHTML = `
       <header class="header">
-        <div class="logo-section">
+        <a href="/" class="logo-section logo-link">
           <img src="/assets/images/logo/logo.png" alt="Hospital CRM Logo" class="logo-img">
           <span class="logo-title">Hospital CMS</span>
-        </div>
+        </a>
       </header>`;
     return;
   }
@@ -31,10 +31,10 @@ function renderHeader() {
 
   let headerContent = `
     <header class="header">
-      <div class="logo-section">
+      <a href="/" class="logo-section logo-link">
         <img src="/assets/images/logo/logo.png" alt="Hospital CRM Logo" class="logo-img">
         <span class="logo-title">Hospital CMS</span>
-      </div>
+      </a>
       <nav>`;
 
   if (role === "admin") {

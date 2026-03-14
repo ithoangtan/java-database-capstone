@@ -55,6 +55,18 @@
   max-width: 440px;
 }
 
+/* Validation/error message in Add Doctor modal */
+.modal-content .error-message {
+  display: none;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
 @media (max-width: 768px) {
   .main-content {
     padding: var(--space-6, 24px) var(--space-4, 16px);

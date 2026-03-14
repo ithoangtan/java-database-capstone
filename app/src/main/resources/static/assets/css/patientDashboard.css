@@ -1,7 +1,7 @@
 /* patientDashboard.css – Patient dashboard & booking UI */
 
 .card-actions {
-  padding: var(--space-3, 12px) var(--space-4, 16px);
+  padding: 0;
   background: var(--color-primary, #0d9488);
   text-align: center;
   transition: background 0.15s ease;
@@ -9,6 +9,25 @@
 
 .card-actions:hover {
   background: var(--color-primary-hover, #0f766e);
+}
+
+/* Nút bấm chiếm cả vùng Book Now để click anywhere */
+.card-actions button {
+  display: block;
+  width: 100%;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  border-radius: 0;
+  transition: opacity 0.15s ease;
+}
+
+.card-actions button:hover {
+  opacity: 0.95;
 }
 
 /* Ripple effect on booking confirm */
@@ -50,11 +69,48 @@
   bottom: 0;
 }
 
+.modalApp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4, 16px);
+  gap: var(--space-3, 12px);
+}
+
+.modalApp-header h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.modalApp-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-border, #e2e8f0);
+  color: var(--color-text, #0f172a);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.modalApp-close:hover {
+  background: var(--color-text-muted, #64748b);
+  color: #fff;
+}
+
+.modalApp-close:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary, #0d9488);
+}
+
 .modalApp h2 {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text, #0f172a);
-  margin-bottom: var(--space-4, 16px);
 }
 
 .modalApp .input-field,
@@ -69,6 +125,13 @@
   border: 1px solid var(--color-border, #e2e8f0);
   border-radius: var(--radius-md, 8px);
   background: var(--color-bg-card, #fff);
+}
+
+.modalApp .booking-error {
+  color: #b91c1c;
+  font-size: 0.875rem;
+  margin: 0 0 var(--space-3, 12px);
+  min-height: 1.25em;
 }
 
 .modalApp .confirm-booking {

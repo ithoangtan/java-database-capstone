@@ -5,11 +5,32 @@
 import { getAllAppointments } from "./services/appointmentRecordService.js";
 import { createPatientRow } from "./components/patientRows.js";
 
-let selectedDate = new Date().toISOString().slice(0, 10);
+/** Mặc định null để lần đầu vào hiển thị toàn bộ danh sách (all). */
+let selectedDate = "";
 let patientName = null;
 
+/** Format appointment time for display: "YYYY-MM-DD HH:mm" or date only. */
+function formatAppointmentDateTime(dateTime) {
+  if (!dateTime) return "";
+  const s = String(dateTime);
+  if (s.length >= 16) return s.slice(0, 10) + " " + s.slice(11, 16);
+  if (s.length >= 10) return s.slice(0, 10);
+  return s;
+}
+
+/** Lấy token: ưu tiên từ URL (/doctorDashboard/TOKEN), không có thì dùng localStorage. Đồng bộ token từ URL vào localStorage. */
+function getToken() {
+  const pathParts = window.location.pathname.split("/").filter(Boolean);
+  if (pathParts[0] === "doctorDashboard" && pathParts[1] && pathParts[1].length > 50) {
+    const tokenFromUrl = pathParts[1];
+    localStorage.setItem("token", tokenFromUrl);
+    return tokenFromUrl;
+  }
+  return localStorage.getItem("token");
+}
+
 function loadAppointments() {
-  const token = localStorage.getItem("token");
+  const token = getToken();
   if (!token) {
     window.location.href = "/";
     return;
@@ -19,23 +40,40 @@ function loadAppointments() {
   const noRecord = document.getElementById("noPatientRecord");
   if (!tbody) return;
 
-  getAllAppointments(selectedDate, patientName || "null", token)
+  tbody.innerHTML = "<tr><td colspan=\"6\" class=\"loading-cell\">Loading appointments…</td></tr>";
+  if (noRecord) noRecord.style.display = "none";
+
+  const dateParam = (selectedDate && String(selectedDate).trim()) ? selectedDate : "null";
+  getAllAppointments(dateParam, patientName || "null", token)
     .then((data) => {
       tbody.innerHTML = "";
       const appointments = data?.appointments || data || [];
       if (appointments.length === 0) {
         if (noRecord) {
           noRecord.style.display = "block";
-          noRecord.textContent = "No appointments found for the selected date.";
+          noRecord.textContent = dateParam === "null"
+            ? "No appointments found."
+            : "No appointments found for the selected date.";
         }
         return;
       }
       if (noRecord) noRecord.style.display = "none";
-      appointments.forEach((apt) => {
+      // Mỗi bệnh nhân chỉ hiển thị một dòng (lấy appointment mới nhất vì list đã sort DESC)
+      const seenPatientIds = new Set();
+      const uniqueByPatient = appointments.filter((apt) => {
+        const patient = apt.patient || apt;
+        const patientId = patient?.id ?? apt?.patientId;
+        if (patientId == null) return true;
+        if (seenPatientIds.has(patientId)) return false;
+        seenPatientIds.add(patientId);
+        return true;
+      });
+      uniqueByPatient.forEach((apt) => {
         const patient = apt.patient || apt;
         const appointmentId = apt.id || apt.appointmentId;
         const doctorId = apt.doctor?.id || apt.doctorId;
-        const row = createPatientRow(patient, appointmentId, doctorId);
+        const appointmentDateTime = formatAppointmentDateTime(apt.appointmentTime || apt.appointmentDate);
+        const row = createPatientRow(patient, appointmentId, doctorId, appointmentDateTime);
         tbody.appendChild(row);
       });
     })
@@ -44,19 +82,33 @@ function loadAppointments() {
       tbody.innerHTML = "";
       if (noRecord) {
         noRecord.style.display = "block";
-        noRecord.textContent = "Error loading appointments. Try again later.";
+        noRecord.textContent = err && err.message === "Unauthorized"
+          ? "Session expired. Redirecting to login…"
+          : "Error loading appointments. Try again later.";
+      }
+      if (err && err.message === "Unauthorized") {
+        setTimeout(() => { window.location.href = "/"; }, 1500);
       }
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const datePicker = document.getElementById("datePicker");
+  const token = getToken();
+  if (!token) {
+    window.location.href = "/";
+    return;
+  }
+
+  // Mặc định ô ngày để trống → gửi "null" → API trả về toàn bộ appointments, sort mới nhất trên cùng
   if (datePicker) {
     datePicker.value = selectedDate;
-    datePicker.addEventListener("change", () => {
-      selectedDate = datePicker.value;
+    const onDateInputOrChange = () => {
+      selectedDate = datePicker.value || "";
       loadAppointments();
-    });
+    };
+    datePicker.addEventListener("change", onDateInputOrChange);
+    datePicker.addEventListener("input", onDateInputOrChange);
   }
 
   const todayBtn = document.getElementById("todayButton");

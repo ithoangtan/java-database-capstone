@@ -25,20 +25,28 @@
             <div class="main-content">
                 <div class="form-container">
                     <h2 id="heading">Add <span>Prescription</span></h2>
-                    <form>
+                    <p id="formError" class="form-error" role="alert" aria-live="polite"></p>
+                    <form id="prescriptionForm" novalidate>
                         <label for="patientName">Patient Name</label>
-                        <input type="text" id="patientName" disabled>
+                        <input type="text" id="patientName" disabled aria-describedby="patientNameHint">
+                        <span id="patientNameHint" class="hint">Filled from appointment.</span>
 
-                        <label for="medicines">Medicine Names</label>
-                        <input type="text" id="medicines" placeholder="e.g. Paracetamol, Vitamin C" required>
+                        <label for="medicines">Medicine / Medication <span class="required">*</span></label>
+                        <input type="text" id="medicines" name="medication" placeholder="e.g. Paracetamol, Vitamin C"
+                            minlength="3" maxlength="100" required
+                            aria-required="true" aria-invalid="false" aria-describedby="medicinesError">
+                        <span id="medicinesError" class="field-error" aria-live="polite"></span>
 
-                        <label for="dosage">Dosage Instructions</label>
-                        <textarea id="dosage" rows="3"
-                            placeholder="e.g - Paracetamol"></textarea>
+                        <label for="dosage">Dosage Instructions <span class="required">*</span></label>
+                        <textarea id="dosage" name="dosage" rows="3" placeholder="e.g. 500mg, 1 tablet every 6 hours"
+                            required aria-required="true" aria-invalid="false" aria-describedby="dosageError"></textarea>
+                        <span id="dosageError" class="field-error" aria-live="polite"></span>
 
-                        <label for="notes">Additional Notes</label>
-                        <textarea id="notes" rows="3"
-                            placeholder="Any precautions or observations (optional)"></textarea>
+                        <label for="notes">Additional Notes (optional, max 200 characters)</label>
+                        <textarea id="notes" name="doctorNotes" rows="3" maxlength="200"
+                            placeholder="Any precautions or observations (optional)"
+                            aria-describedby="notesHint"></textarea>
+                        <span id="notesHint" class="hint">Max 200 characters.</span>
 
                         <button type="submit" class="btn-primary" id="savePrescription">Add Prescription</button>
                         <button type="button" onclick="selectRole('doctor')" class="btn-secondary">Cancel</button>

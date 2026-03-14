@@ -1,46 +1,77 @@
 // prescriptionServices.js
-import { API_BASE_URL } from '../config/config.js'
+import { API_BASE_URL } from "../config/config.js";
 
-const PRESCRITION_API = API_BASE_URL + "/prescription"
+const PRESCRIPTION_API = API_BASE_URL + "/prescription";
+
 export async function savePrescription(prescription, token) {
   try {
-    const response = await fetch(`${PRESCRITION_API}/${token}`, {
+    const response = await fetch(`${PRESCRIPTION_API}/${token}`, {
       method: "POST",
       headers: {
-        "Content-type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(prescription)
+      body: JSON.stringify(prescription),
     });
-    const result = await response.json();
-    return { success: response.ok, message: result.message }
+    let message = "Failed to save prescription.";
+    try {
+      const result = await response.json();
+      message = result.message != null ? result.message : message;
+      return { success: response.ok, message };
+    } catch (_) {
+      if (!response.ok) {
+        message = response.status === 401 ? "Invalid or expired token." : message;
+      }
+      return { success: false, message };
+    }
+  } catch (error) {
+    console.error("Error :: savePrescription ::", error);
+    return { success: false, message: error.message || "Network or server error." };
   }
-  catch (error) {
-    console.error("Error :: savePrescription :: ", error)
-    return { success: false, message: result.message }
+}
+
+export async function updatePrescription(prescription, token) {
+  try {
+    const response = await fetch(`${PRESCRIPTION_API}/${token}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(prescription),
+    });
+    let message = "Failed to update prescription.";
+    try {
+      const result = await response.json();
+      message = result.message != null ? result.message : message;
+      return { success: response.ok, message };
+    } catch (_) {
+      if (!response.ok) {
+        message = response.status === 401 ? "Invalid or expired token." : message;
+      }
+      return { success: false, message };
+    }
+  } catch (error) {
+    console.error("Error :: updatePrescription ::", error);
+    return { success: false, message: error.message || "Network or server error." };
   }
 }
 
 export async function getPrescription(appointmentId, token) {
-  try {
-    const response = await fetch(`${PRESCRITION_API}/${appointmentId}/${token}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
+  const response = await fetch(`${PRESCRIPTION_API}/${appointmentId}/${token}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Failed to fetch prescription:", errorData);
-      throw new Error(errorData.message || "Unable to fetch prescription");
-    }
-
-    const result = await response.json();
-    console.log(result)
-    console.log(result)
-    return result; // This should be your prescription object
-  } catch (error) {
-    console.error("Error :: getPrescription ::", error);
-    throw error;
+  if (!response.ok) {
+    let errorData = {};
+    try {
+      errorData = await response.json();
+    } catch (_) {}
+    const msg = errorData.message || "Unable to fetch prescription.";
+    throw new Error(msg);
   }
+
+  const result = await response.json();
+  return result;
 }

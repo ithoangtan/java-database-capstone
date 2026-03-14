@@ -14,6 +14,16 @@ public class DashboardController {
     @Autowired
     private Service service;
 
+    @GetMapping("/admin/login")
+    public String adminLoginPage() {
+        return "redirect:/";
+    }
+
+    @GetMapping("/doctor/login")
+    public String doctorLoginPage() {
+        return "redirect:/";
+    }
+
     @GetMapping("/adminDashboard/{token}")
     public String adminDashboard(@PathVariable String token) {
         Map<String, Object> validationResult = service.validateToken(token, "admin");

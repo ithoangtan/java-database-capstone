@@ -1,5 +1,5 @@
 // patientAppointment.js
-import { getPatientAppointments, getPatientData, filterAppointments } from "./services/patientServices.js";
+import { getPatientAppointments, getPatientData } from "./services/patientServices.js";
 
 const tableBody = document.getElementById("patientTableBody");
 const token = localStorage.getItem("token");
@@ -20,7 +20,23 @@ async function initializePage() {
     patientId = Number(patient.id);
 
     const appointmentData = await getPatientAppointments(patientId, token, "patient") || [];
-    allAppointments = appointmentData.filter(app => app.patientId === patientId);
+    // Backend returns { id, doctor: { id, name, specialty }, patient: { id, name }, appointmentTime, status }
+    // Normalize to flat shape expected by render (patientId, doctorName, appointmentDate, appointmentTimeOnly)
+    allAppointments = appointmentData.map(app => {
+      const timeStr = app.appointmentTime || "";
+      const [datePart, timePart] = timeStr.split("T");
+      return {
+        id: app.id,
+        patientId: app.patient?.id ?? app.patientId,
+        patientName: app.patient?.name ?? app.patientName,
+        doctorId: app.doctor?.id ?? app.doctorId,
+        doctorName: app.doctor?.name ?? app.doctorName,
+        appointmentTime: app.appointmentTime,
+        appointmentDate: datePart || "",
+        appointmentTimeOnly: timePart ? timePart.substring(0, 5) : "",
+        status: app.status,
+      };
+    }).filter(app => app.patientId === patientId);
 
     renderAppointments(allAppointments);
   } catch (error) {
@@ -29,36 +45,66 @@ async function initializePage() {
   }
 }
 
+function getStatusLabel(status) {
+  if (status === 0) return { text: "Scheduled", class: "status-scheduled" };
+  if (status === 1) return { text: "Completed", class: "status-completed" };
+  return { text: "Cancelled", class: "status-cancelled" };
+}
+
 function renderAppointments(appointments) {
   tableBody.innerHTML = "";
 
   const actionTh = document.querySelector("#patientTable thead tr th:last-child");
   if (actionTh) {
-    actionTh.style.display = "table-cell"; // Always show "Actions" column
+    actionTh.style.display = "table-cell";
   }
 
   if (!appointments.length) {
-    tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No Appointments Found</td></tr>`;
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6">
+          <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-title">No appointments yet</div>
+            <div class="empty-state-text">Your scheduled appointments will appear here.</div>
+          </div>
+        </td>
+      </tr>`;
     return;
   }
 
   appointments.forEach(appointment => {
+    const statusInfo = getStatusLabel(appointment.status);
     const tr = document.createElement("tr");
+    const actionCell =
+      appointment.status === 0
+        ? `<button type="button" class="btn-edit-appointment" title="Edit appointment" aria-label="Edit">
+             <img src="../assets/images/edit/edit.png" alt="" />
+           </button>`
+        : '<span class="cell-actions-empty">—</span>';
     tr.innerHTML = `
-      <td>${appointment.patientName || "You"}</td>
-      <td>${appointment.doctorName}</td>
-      <td>${appointment.appointmentDate}</td>
-      <td>${appointment.appointmentTimeOnly}</td>
-      <td>${appointment.status == 0 ? `<img src="../assets/images/edit/edit.png" alt="Edit" class="prescription-btn" data-id="${appointment.patientId}">` : "-"}</td>
+      <td>${escapeHtml(appointment.patientName || "You")}</td>
+      <td>${escapeHtml(appointment.doctorName || "—")}</td>
+      <td>${escapeHtml(appointment.appointmentDate || "—")}</td>
+      <td>${escapeHtml(appointment.appointmentTimeOnly || "—")}</td>
+      <td><span class="status-badge ${statusInfo.class}">${escapeHtml(statusInfo.text)}</span></td>
+      <td>${actionCell}</td>
     `;
 
-    if (appointment.status == 0) {
-      const actionBtn = tr.querySelector(".prescription-btn");
+    if (appointment.status === 0) {
+      const actionBtn = tr.querySelector(".btn-edit-appointment");
       actionBtn?.addEventListener("click", () => redirectToUpdatePage(appointment));
     }
 
     tableBody.appendChild(tr);
   });
+}
+
+function escapeHtml(str) {
+  if (str == null) return "";
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
 }
 
 function redirectToUpdatePage(appointment) {
@@ -80,26 +126,30 @@ function redirectToUpdatePage(appointment) {
 }
 
 
-// Search and Filter Listeners
+// Search and Filter Listeners – client-side filter from allAppointments
 document.getElementById("searchBar").addEventListener("input", handleFilterChange);
 document.getElementById("appointmentFilter").addEventListener("change", handleFilterChange);
 
-async function handleFilterChange() {
-  const searchBarValue = document.getElementById("searchBar").value.trim();
+function handleFilterChange() {
+  const searchBarValue = document.getElementById("searchBar").value.trim().toLowerCase();
   const filterValue = document.getElementById("appointmentFilter").value;
+  const today = new Date().toISOString().slice(0, 10);
 
-  const name = searchBarValue || null;
-  const condition = filterValue === "allAppointments" ? null : filterValue || null;
+  let list = allAppointments;
 
-  try {
-    const response = await filterAppointments(condition, name, token);
-    const appointments = response?.appointments || [];
-    filteredAppointments = appointments.filter(app => app.patientId === patientId);
-
-    renderAppointments(filteredAppointments);
-  } catch (error) {
-    console.error("Failed to filter appointments:", error);
-    alert("❌ An error occurred while filtering appointments.");
+  if (filterValue === "future") {
+    list = list.filter(app => (app.appointmentDate || "") >= today);
+  } else if (filterValue === "past") {
+    list = list.filter(app => (app.appointmentDate || "") < today);
   }
+
+  if (searchBarValue) {
+    list = list.filter(
+      app => (app.doctorName || "").toLowerCase().includes(searchBarValue)
+    );
+  }
+
+  filteredAppointments = list;
+  renderAppointments(filteredAppointments);
 }
 

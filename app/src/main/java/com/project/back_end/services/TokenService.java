@@ -2,6 +2,7 @@ package com.project.back_end.services;
 
 import com.project.back_end.repo.AdminRepository;
 import com.project.back_end.repo.DoctorRepository;
+import com.project.back_end.repo.PatientRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 @Component
 public class TokenService {
@@ -19,10 +21,13 @@ public class TokenService {
 
     private final AdminRepository adminRepository;
     private final DoctorRepository doctorRepository;
+    private final PatientRepository patientRepository;
 
-    public TokenService(AdminRepository adminRepository, DoctorRepository doctorRepository) {
+    public TokenService(AdminRepository adminRepository, DoctorRepository doctorRepository,
+                        PatientRepository patientRepository) {
         this.adminRepository = adminRepository;
         this.doctorRepository = doctorRepository;
+        this.patientRepository = patientRepository;
     }
 
     private SecretKey getSigningKey() {
@@ -59,8 +64,24 @@ public class TokenService {
         return switch (role.toLowerCase()) {
             case "admin" -> adminRepository.findByUsername(subject) != null;
             case "doctor" -> doctorRepository.findByEmail(subject) != null;
+            case "patient" -> patientRepository.findByEmail(subject) != null;
             default -> false;
         };
+    }
+
+    /**
+     * Generates a JWT token with the given subject (username for admin, email for doctor).
+     * Token expires in 7 days.
+     */
+    public String generateToken(String subject) {
+        long now = System.currentTimeMillis();
+        long expiryMs = 7 * 24 * 60 * 60 * 1000L;
+        return Jwts.builder()
+                .subject(subject)
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + expiryMs))
+                .signWith(getSigningKey())
+                .compact();
     }
 
 // 1. **@Component Annotation**

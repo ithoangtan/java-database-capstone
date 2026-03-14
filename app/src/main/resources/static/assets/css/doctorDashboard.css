@@ -131,6 +131,13 @@
   margin-top: var(--space-4, 16px);
 }
 
+.loading-cell {
+  text-align: center;
+  padding: var(--space-8, 32px) !important;
+  color: var(--color-text-muted, #64748b);
+  font-style: italic;
+}
+
 @media (max-width: 768px) {
   .main-content {
     padding: var(--space-6, 24px) var(--space-4, 16px);

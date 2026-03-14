@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 // 1. Extend JpaRepository:
 //    - The repository extends JpaRepository<Appointment, Long>, which gives it basic CRUD functionality.
@@ -27,18 +28,28 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     //      - The doctor's available times are eagerly fetched to avoid lazy loading.
     //      - Return type: List<Appointment>
     //      - Parameters: Long doctorId, LocalDateTime start, LocalDateTime end
-    @Query("SELECT DISTINCT a FROM Appointment a LEFT JOIN FETCH a.doctor LEFT JOIN FETCH a.patient WHERE a.doctor.id = :doctorId AND a.appointmentTime BETWEEN :start AND :end")
+    @Query("SELECT DISTINCT a FROM Appointment a LEFT JOIN FETCH a.doctor LEFT JOIN FETCH a.patient WHERE a.doctor.id = :doctorId AND a.appointmentTime BETWEEN :start AND :end ORDER BY a.appointmentTime DESC")
     List<Appointment> findByDoctorIdAndAppointmentTimeBetween(
             @Param("doctorId") Long doctorId,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end);
+
+    /** All appointments for a doctor (no date filter); default sort newest first. */
+    @Query("SELECT DISTINCT a FROM Appointment a LEFT JOIN FETCH a.doctor LEFT JOIN FETCH a.patient WHERE a.doctor.id = :doctorId ORDER BY a.appointmentTime DESC")
+    List<Appointment> findByDoctorIdOrderByAppointmentTimeDesc(@Param("doctorId") Long doctorId);
+
+    /** All appointments for a doctor filtered by patient name (no date filter); sort newest first. */
+    @Query("SELECT DISTINCT a FROM Appointment a LEFT JOIN FETCH a.doctor LEFT JOIN FETCH a.patient WHERE a.doctor.id = :doctorId AND LOWER(a.patient.name) LIKE LOWER(CONCAT('%', :patientName, '%')) ORDER BY a.appointmentTime DESC")
+    List<Appointment> findByDoctorIdAndPatient_NameContainingIgnoreCaseOrderByAppointmentTimeDesc(
+            @Param("doctorId") Long doctorId,
+            @Param("patientName") String patientName);
 
     //    - **findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween**:
     //      - This method retrieves appointments for a specific doctor and patient name (ignoring case) within a given time range.
     //      - It performs a LEFT JOIN to fetch both the doctor and patient details along with the appointment times.
     //      - Return type: List<Appointment>
     //      - Parameters: Long doctorId, String patientName, LocalDateTime start, LocalDateTime end
-    @Query("SELECT DISTINCT a FROM Appointment a LEFT JOIN FETCH a.doctor LEFT JOIN FETCH a.patient WHERE a.doctor.id = :doctorId AND LOWER(a.patient.name) LIKE LOWER(CONCAT('%', :patientName, '%')) AND a.appointmentTime BETWEEN :start AND :end")
+    @Query("SELECT DISTINCT a FROM Appointment a LEFT JOIN FETCH a.doctor LEFT JOIN FETCH a.patient WHERE a.doctor.id = :doctorId AND LOWER(a.patient.name) LIKE LOWER(CONCAT('%', :patientName, '%')) AND a.appointmentTime BETWEEN :start AND :end ORDER BY a.appointmentTime DESC")
     List<Appointment> findByDoctorIdAndPatient_NameContainingIgnoreCaseAndAppointmentTimeBetween(
             @Param("doctorId") Long doctorId,
             @Param("patientName") String patientName,
@@ -60,6 +71,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     //      - Return type: List<Appointment>
     //      - Parameters: Long patientId
     List<Appointment> findByPatient_Id(Long patientId);
+
+    /** All appointments for a patient with doctor and patient fetched; newest first. */
+    @Query("SELECT DISTINCT a FROM Appointment a LEFT JOIN FETCH a.doctor LEFT JOIN FETCH a.patient WHERE a.patient.id = :patientId ORDER BY a.appointmentTime DESC")
+    List<Appointment> findByPatient_IdOrderByAppointmentTimeDesc(@Param("patientId") Long patientId);
 
     //    - **findByPatient_IdAndStatusOrderByAppointmentTimeAsc**:
     //      - This method retrieves all appointments for a specific patient with a given status, ordered by the appointment time.
@@ -95,4 +110,19 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     @Transactional
     @Query("UPDATE Appointment a SET a.status = :status WHERE a.id = :id")
     void updateStatus(@Param("status") int status, @Param("id") long id);
+
+    /**
+     * Count appointments for a doctor within a date range (e.g. same day).
+     */
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.doctor.id = :doctorId AND a.appointmentTime BETWEEN :start AND :end")
+    long countByDoctor_IdAndAppointmentTimeBetween(
+            @Param("doctorId") Long doctorId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
+    /** Latest appointment (by appointment_time) for a doctor; empty if none. */
+    Optional<Appointment> findFirstByDoctor_IdOrderByAppointmentTimeDesc(Long doctorId);
+
+    /** True if an appointment already exists for this doctor, patient and time (no duplicate allowed). */
+    boolean existsByDoctor_IdAndPatient_IdAndAppointmentTime(Long doctorId, Long patientId, LocalDateTime appointmentTime);
 }

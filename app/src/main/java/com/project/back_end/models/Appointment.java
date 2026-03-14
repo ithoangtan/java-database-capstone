@@ -12,7 +12,8 @@ import java.time.LocalTime;
 //    - Marks the class as a JPA entity, meaning it represents a table in the database.
 //    - Required for persistence frameworks (e.g., Hibernate) to map the class to a database table.
 @Entity
-@Table(name = "appointment")
+@Table(name = "appointment",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"doctor_id", "patient_id", "appointment_time"}))
 public class Appointment {
 
     // 1. 'id' field:
