@@ -1,0 +1,23 @@
+# Build output
+target/
+
+# IDE and editor
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Misc
+*.md
+*.log
+.DS_Store
