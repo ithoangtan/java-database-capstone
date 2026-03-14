@@ -16,11 +16,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -59,7 +62,10 @@ class AdminControllerTest {
 
     @Test
     void adminLogin_returns401_whenUsernameMissing() throws Exception {
-        Map<String, String> body = Map.of("password", "pass123");
+        Admin body = new Admin();
+        body.setPassword("pass123");
+        when(service.validateAdmin(any(Admin.class)))
+                .thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Username and password are required.")));
 
         mockMvc.perform(post("/admin/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -70,7 +76,10 @@ class AdminControllerTest {
 
     @Test
     void adminLogin_returns401_whenPasswordMissing() throws Exception {
-        Map<String, String> body = Map.of("username", "admin1");
+        Admin body = new Admin();
+        body.setUsername("admin1");
+        when(service.validateAdmin(any(Admin.class)))
+                .thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Username and password are required.")));
 
         mockMvc.perform(post("/admin/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -81,8 +90,11 @@ class AdminControllerTest {
 
     @Test
     void adminLogin_returns401_whenCredentialsInvalid() throws Exception {
-        Map<String, String> body = Map.of("username", "admin1", "password", "wrong");
-        when(adminRepository.findByUsername("admin1")).thenReturn(null);
+        Admin body = new Admin();
+        body.setUsername("admin1");
+        body.setPassword("wrong");
+        when(service.validateAdmin(any(Admin.class)))
+                .thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials. Please try again.")));
 
         mockMvc.perform(post("/admin/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -93,11 +105,11 @@ class AdminControllerTest {
 
     @Test
     void adminLogin_returns401_whenPasswordWrong() throws Exception {
-        Map<String, String> body = Map.of("username", "admin1", "password", "wrong");
-        Admin admin = new Admin();
-        admin.setUsername("admin1");
-        admin.setPassword("correct");
-        when(adminRepository.findByUsername("admin1")).thenReturn(admin);
+        Admin body = new Admin();
+        body.setUsername("admin1");
+        body.setPassword("wrong");
+        when(service.validateAdmin(any(Admin.class)))
+                .thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials. Please try again.")));
 
         mockMvc.perform(post("/admin/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -108,12 +120,11 @@ class AdminControllerTest {
 
     @Test
     void adminLogin_returns200_andToken_whenCredentialsValid() throws Exception {
-        Map<String, String> body = Map.of("username", "admin1", "password", "secret");
-        Admin admin = new Admin();
-        admin.setUsername("admin1");
-        admin.setPassword("secret");
-        when(adminRepository.findByUsername("admin1")).thenReturn(admin);
-        when(tokenService.generateToken("admin1")).thenReturn("jwt-token-here");
+        Admin body = new Admin();
+        body.setUsername("admin1");
+        body.setPassword("secret");
+        when(service.validateAdmin(any(Admin.class)))
+                .thenReturn(ResponseEntity.ok(Map.of("token", "jwt-token-here")));
 
         mockMvc.perform(post("/admin/login")
                         .contentType(MediaType.APPLICATION_JSON)

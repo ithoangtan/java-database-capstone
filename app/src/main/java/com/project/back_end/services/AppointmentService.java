@@ -6,6 +6,8 @@ import com.project.back_end.models.Patient;
 import com.project.back_end.repo.AppointmentRepository;
 import com.project.back_end.repo.DoctorRepository;
 import com.project.back_end.repo.PatientRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,20 +15,25 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
 public class AppointmentService {
 
+    private static final int STATUS_CANCELLED = 2;
+
     private final AppointmentRepository appointmentRepository;
     private final DoctorRepository doctorRepository;
     private final PatientRepository patientRepository;
+    private final TokenService tokenService;
 
     public AppointmentService(AppointmentRepository appointmentRepository, DoctorRepository doctorRepository,
-                             PatientRepository patientRepository) {
+                             PatientRepository patientRepository, TokenService tokenService) {
         this.appointmentRepository = appointmentRepository;
         this.doctorRepository = doctorRepository;
         this.patientRepository = patientRepository;
+        this.tokenService = tokenService;
     }
 
     @Transactional(readOnly = true)
@@ -117,5 +124,36 @@ public class AppointmentService {
         appointment.setAppointmentTime(appointmentTime);
         appointment.setStatus(status);
         return appointmentRepository.save(appointment);
+    }
+
+    /**
+     * Cancel an appointment. Validates that the token belongs to the patient who owns the appointment.
+     * Sets status to cancelled (2).
+     */
+    @Transactional
+    public ResponseEntity<Map<String, String>> cancelAppointment(long id, String token) {
+        String email = tokenService.extractSubject(token);
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid or expired token"));
+        }
+        Patient patient = patientRepository.findByEmail(email);
+        if (patient == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid or expired token"));
+        }
+        Optional<Appointment> opt = appointmentRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "Appointment not found"));
+        }
+        Appointment appointment = opt.get();
+        if (!appointment.getPatient().getId().equals(patient.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Not authorized to cancel this appointment"));
+        }
+        appointment.setStatus(STATUS_CANCELLED);
+        appointmentRepository.save(appointment);
+        return ResponseEntity.ok(Map.of("message", "Appointment cancelled successfully"));
     }
 }

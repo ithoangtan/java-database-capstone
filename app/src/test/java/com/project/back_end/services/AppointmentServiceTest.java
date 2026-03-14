@@ -34,6 +34,9 @@ class AppointmentServiceTest {
     @Mock
     private PatientRepository patientRepository;
 
+    @Mock
+    private TokenService tokenService;
+
     private AppointmentService appointmentService;
 
     private Doctor doctor;
@@ -41,7 +44,7 @@ class AppointmentServiceTest {
 
     @BeforeEach
     void setUp() {
-        appointmentService = new AppointmentService(appointmentRepository, doctorRepository, patientRepository);
+        appointmentService = new AppointmentService(appointmentRepository, doctorRepository, patientRepository, tokenService);
         doctor = new Doctor();
         doctor.setId(1L);
         doctor.setEmail("doctor@test.com");

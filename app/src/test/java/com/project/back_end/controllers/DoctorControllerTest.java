@@ -17,13 +17,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -98,8 +101,10 @@ class DoctorControllerTest {
     @Test
     void doctorLogin_returns401_whenEmailMissing() throws Exception {
         Login login = new Login();
-        login.setEmail("");
+        login.setIdentifier("");
         login.setPassword("pass123");
+        when(doctorService.validateDoctor(any(Login.class)))
+                .thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Email and password are required.")));
 
         mockMvc.perform(post("/doctor/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -111,9 +116,10 @@ class DoctorControllerTest {
     @Test
     void doctorLogin_returns401_whenCredentialsInvalid() throws Exception {
         Login login = new Login();
-        login.setEmail("doc@test.com");
+        login.setIdentifier("doc@test.com");
         login.setPassword("wrong");
-        when(doctorRepository.findByEmail("doc@test.com")).thenReturn(null);
+        when(doctorService.validateDoctor(any(Login.class)))
+                .thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid credentials. Please try again.")));
 
         mockMvc.perform(post("/doctor/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -125,13 +131,10 @@ class DoctorControllerTest {
     @Test
     void doctorLogin_returns200_andToken_whenValid() throws Exception {
         Login login = new Login();
-        login.setEmail("doc@test.com");
+        login.setIdentifier("doc@test.com");
         login.setPassword("secret");
-        Doctor doctor = new Doctor();
-        doctor.setEmail("doc@test.com");
-        doctor.setPassword("secret");
-        when(doctorRepository.findByEmail("doc@test.com")).thenReturn(doctor);
-        when(tokenService.generateToken("doc@test.com")).thenReturn("jwt-token");
+        when(doctorService.validateDoctor(any(Login.class)))
+                .thenReturn(ResponseEntity.ok(Map.of("token", "jwt-token")));
 
         mockMvc.perform(post("/doctor/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -142,7 +145,7 @@ class DoctorControllerTest {
 
     @Test
     void addDoctor_returns401_whenTokenInvalid() throws Exception {
-        when(service.validateToken(eq("bad-token"), eq("admin"))).thenReturn(Map.of("error", "Invalid"));
+        when(service.validateToken(eq("bad-token"), eq("admin"))).thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired token")));
 
         Map<String, Object> body = Map.of(
                 "name", "Dr. John",
@@ -155,12 +158,12 @@ class DoctorControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid or expired token."));
+                .andExpect(jsonPath("$.message").value("Invalid or expired token"));
     }
 
     @Test
     void addDoctor_returns400_whenNameMissing() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(ResponseEntity.ok(Map.of()));
 
         Map<String, Object> body = Map.of(
                 "email", "john@test.com",
@@ -176,7 +179,7 @@ class DoctorControllerTest {
 
     @Test
     void addDoctor_returns409_whenEmailExists() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(ResponseEntity.ok(Map.of()));
         Map<String, Object> body = Map.of(
                 "name", "Dr. John",
                 "email", "existing@test.com",
@@ -196,12 +199,12 @@ class DoctorControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("A doctor with this email already exists."));
+                .andExpect(jsonPath("$.message").value("Doctor already exists"));
     }
 
     @Test
     void addDoctor_returns200_whenSuccess() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(ResponseEntity.ok(Map.of()));
         Map<String, Object> body = Map.of(
                 "name", "Dr. John",
                 "email", "new@test.com",
@@ -214,12 +217,12 @@ class DoctorControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Doctor added successfully."));
+                .andExpect(jsonPath("$.message").value("Doctor added to db"));
     }
 
     @Test
     void deleteDoctor_returns401_whenTokenInvalid() throws Exception {
-        when(service.validateToken(eq("bad-token"), eq("admin"))).thenReturn(Map.of("error", "Invalid"));
+        when(service.validateToken(eq("bad-token"), eq("admin"))).thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired token")));
 
         mockMvc.perform(delete("/doctor/1/bad-token"))
                 .andExpect(status().isUnauthorized());
@@ -227,21 +230,21 @@ class DoctorControllerTest {
 
     @Test
     void deleteDoctor_returns404_whenDoctorNotFound() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(ResponseEntity.ok(Map.of()));
         when(doctorService.deleteDoctor(999L)).thenReturn(-1);
 
         mockMvc.perform(delete("/doctor/999/valid-token"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Doctor not found."));
+                .andExpect(jsonPath("$.message").value("Doctor not found with id"));
     }
 
     @Test
     void deleteDoctor_returns200_whenSuccess() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("admin"))).thenReturn(ResponseEntity.ok(Map.of()));
         when(doctorService.deleteDoctor(1L)).thenReturn(1);
 
         mockMvc.perform(delete("/doctor/1/valid-token"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Doctor deleted successfully."));
+                .andExpect(jsonPath("$.message").value("Doctor deleted successfully"));
     }
 }

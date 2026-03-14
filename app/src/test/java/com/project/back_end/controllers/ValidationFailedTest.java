@@ -22,22 +22,17 @@ class ValidationFailedTest {
     }
 
     @Test
-    void handleValidationException_returns400_withFieldErrorsAndMessage() {
+    void handleValidationException_returns400_withMessage() {
         BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "target");
         bindingResult.addError(new FieldError("target", "email", "must be a valid email"));
         bindingResult.addError(new FieldError("target", "name", "must not be blank"));
         MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
 
-        ResponseEntity<Map<String, Object>> response = validationFailed.handleValidationException(ex);
+        ResponseEntity<Map<String, String>> response = validationFailed.handleValidationException(ex);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody()).containsKey("errors");
         assertThat(response.getBody()).containsKey("message");
-        @SuppressWarnings("unchecked")
-        Map<String, String> errors = (Map<String, String>) response.getBody().get("errors");
-        assertThat(errors).containsEntry("email", "must be a valid email");
-        assertThat(errors).containsEntry("name", "must not be blank");
         assertThat(response.getBody().get("message")).isEqualTo("must be a valid email");
     }
 
@@ -46,7 +41,7 @@ class ValidationFailedTest {
         BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "target");
         MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
 
-        ResponseEntity<Map<String, Object>> response = validationFailed.handleValidationException(ex);
+        ResponseEntity<Map<String, String>> response = validationFailed.handleValidationException(ex);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();

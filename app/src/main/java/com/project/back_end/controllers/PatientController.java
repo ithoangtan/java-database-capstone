@@ -5,6 +5,7 @@ import com.project.back_end.models.Appointment;
 import com.project.back_end.models.Patient;
 import com.project.back_end.repo.AppointmentRepository;
 import com.project.back_end.repo.PatientRepository;
+import com.project.back_end.services.PatientService;
 import com.project.back_end.services.Service;
 import com.project.back_end.services.TokenService;
 import org.springframework.http.HttpStatus;
@@ -23,32 +24,39 @@ public class PatientController {
     private final TokenService tokenService;
     private final Service service;
     private final AppointmentRepository appointmentRepository;
+    private final PatientService patientService;
 
     public PatientController(PatientRepository patientRepository, TokenService tokenService, Service service,
-                             AppointmentRepository appointmentRepository) {
+                             AppointmentRepository appointmentRepository, PatientService patientService) {
         this.patientRepository = patientRepository;
         this.tokenService = tokenService;
         this.service = service;
         this.appointmentRepository = appointmentRepository;
+        this.patientService = patientService;
     }
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Login login) {
-        if (login == null || login.getEmail() == null || login.getEmail().isBlank()
-                || login.getPassword() == null || login.getPassword().isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Email and password are required."));
-        }
-        Patient patient = patientRepository.findByEmail(login.getEmail().trim());
-        if (patient == null || !login.getPassword().equals(patient.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid credentials. Please try again."));
-        }
-        String token = tokenService.generateToken(patient.getEmail());
-        return ResponseEntity.ok(Map.of("token", token));
+        ResponseEntity<Map<String, String>> r = service.validatePatientLogin(login);
+        Map<String, Object> body = r.getBody() != null ? new java.util.HashMap<>(r.getBody()) : new java.util.HashMap<>();
+        return ResponseEntity.status(r.getStatusCode()).body(body);
     }
 
-    /** Get appointments for a patient: GET /patient/{id}/{user}/{token}. User is "patient" or "doctor". Token may contain dots (JWT). */
+    /** Get appointments for a patient: GET /patient/{id}/{token} (lab) or /patient/{id}/{user}/{token} for doctor view. */
+    @GetMapping("/{id}/{token:.+}")
+    public ResponseEntity<Map<String, Object>> getPatientAppointmentsByIdAndToken(
+            @PathVariable String id,
+            @PathVariable String token) {
+        Long patientId;
+        try {
+            patientId = Long.parseLong(id);
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid patient id.", "appointments", List.of()));
+        }
+        return patientService.getPatientAppointment(patientId, token);
+    }
+
+    /** Get appointments for a patient with user role: GET /patient/{id}/{user}/{token}. */
     @GetMapping("/{id}/{user}/{token:.+}")
     public ResponseEntity<Map<String, Object>> getPatientAppointments(
             @PathVariable String id,
@@ -61,74 +69,48 @@ public class PatientController {
             return ResponseEntity.badRequest().body(Map.of("message", "Invalid patient id.", "appointments", List.of()));
         }
         if ("patient".equalsIgnoreCase(user)) {
-            if (!service.validateToken(token, "patient").isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid or expired token.", "appointments", List.of()));
-            }
-            String email = tokenService.extractSubject(token);
-            if (email == null || email.isBlank()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid token.", "appointments", List.of()));
-            }
-            Patient patient = patientRepository.findByEmail(email);
-            if (patient == null || !patient.getId().equals(patientId)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Access denied.", "appointments", List.of()));
-            }
-        } else if ("doctor".equalsIgnoreCase(user)) {
-            if (!service.validateToken(token, "doctor").isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid or expired token.", "appointments", List.of()));
-            }
-        } else {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid user role.", "appointments", List.of()));
+            return patientService.getPatientAppointment(patientId, token);
         }
-        List<Appointment> appointments = appointmentRepository.findByPatient_IdOrderByAppointmentTimeDesc(patientId);
-        List<Map<String, Object>> list = appointments.stream()
-                .map(a -> Map.<String, Object>of(
-                        "id", a.getId(),
-                        "doctor", a.getDoctor() != null ? Map.of(
-                                "id", a.getDoctor().getId(),
-                                "name", a.getDoctor().getName() != null ? a.getDoctor().getName() : "",
-                                "specialty", a.getDoctor().getSpecialty() != null ? a.getDoctor().getSpecialty() : ""
-                        ) : Map.of(),
-                        "patient", a.getPatient() != null ? Map.of(
-                                "id", a.getPatient().getId(),
-                                "name", a.getPatient().getName() != null ? a.getPatient().getName() : ""
-                        ) : Map.of(),
-                        "appointmentTime", a.getAppointmentTime() != null ? a.getAppointmentTime().toString() : "",
-                        "status", a.getStatus()
-                ))
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(Map.of("appointments", list));
+        if ("doctor".equalsIgnoreCase(user)) {
+            ResponseEntity<Map<String, String>> tr = service.validateToken(token, "doctor");
+            if (tr.getStatusCode().isError()) {
+                Map<String, Object> err = new java.util.HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of());
+                err.put("appointments", List.of());
+                return ResponseEntity.status(tr.getStatusCode()).body(err);
+            }
+            List<Appointment> appointments = appointmentRepository.findByPatient_IdOrderByAppointmentTimeDesc(patientId);
+            List<Map<String, Object>> list = appointments.stream()
+                    .map(a -> Map.<String, Object>of(
+                            "id", a.getId(),
+                            "doctor", a.getDoctor() != null ? Map.of(
+                                    "id", a.getDoctor().getId(),
+                                    "name", a.getDoctor().getName() != null ? a.getDoctor().getName() : "",
+                                    "specialty", a.getDoctor().getSpecialty() != null ? a.getDoctor().getSpecialty() : ""
+                            ) : Map.of(),
+                            "patient", a.getPatient() != null ? Map.of(
+                                    "id", a.getPatient().getId(),
+                                    "name", a.getPatient().getName() != null ? a.getPatient().getName() : ""
+                            ) : Map.of(),
+                            "appointmentTime", a.getAppointmentTime() != null ? a.getAppointmentTime().toString() : "",
+                            "status", a.getStatus()
+                    ))
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(Map.of("appointments", list));
+        }
+        return ResponseEntity.badRequest().body(Map.of("message", "Invalid user role.", "appointments", List.of()));
+    }
+
+    @GetMapping("/filter/{condition}/{name}/{token:.+}")
+    public ResponseEntity<Map<String, Object>> filterPatient(
+            @PathVariable String condition,
+            @PathVariable String name,
+            @PathVariable String token) {
+        return service.filterPatient(condition, name, token);
     }
 
     @GetMapping("/{token}")
     public ResponseEntity<Map<String, Object>> getPatient(@PathVariable String token) {
-        if (!service.validateToken(token, "patient").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token."));
-        }
-        String email = tokenService.extractSubject(token);
-        if (email == null || email.isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid token."));
-        }
-        Patient patient = patientRepository.findByEmail(email);
-        if (patient == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "Patient not found."));
-        }
-        return ResponseEntity.ok(Map.of(
-                "patient",
-                Map.of(
-                        "id", patient.getId(),
-                        "name", patient.getName(),
-                        "email", patient.getEmail(),
-                        "phone", patient.getPhone(),
-                        "address", patient.getAddress()
-                )
-        ));
+        return patientService.getPatientDetails(token);
     }
 
     @PostMapping
@@ -166,7 +148,7 @@ public class PatientController {
 
         if (patientRepository.findByEmailOrPhone(email, phone) != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("message", "A patient with this email or phone already exists."));
+                    .body(Map.of("message", "Patient with email id or phone no already exist"));
         }
 
         Patient patient = new Patient();
@@ -177,10 +159,10 @@ public class PatientController {
         patient.setAddress(address);
         try {
             patientRepository.save(patient);
-            return ResponseEntity.ok(Map.of("message", "Patient registered successfully."));
+            return ResponseEntity.ok(Map.of("message", "Signup successful"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("message", "Failed to register. Please try again."));
+                    .body(Map.of("message", "Internal server error"));
         }
     }
 }

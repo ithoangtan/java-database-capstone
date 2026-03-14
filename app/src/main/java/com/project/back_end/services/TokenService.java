@@ -36,6 +36,14 @@ public class TokenService {
     }
 
     /**
+     * Extracts the subject (identifier: username or email) from the JWT token.
+     * Returns null if the token is invalid or cannot be parsed.
+     */
+    public String extractIdentifier(String token) {
+        return extractSubject(token);
+    }
+
+    /**
      * Extracts the subject (username or email) from the JWT token.
      * Returns null if the token is invalid or cannot be parsed.
      */
@@ -50,6 +58,13 @@ public class TokenService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * Validates whether the token is valid for the given user/role (admin, doctor, or patient).
+     */
+    public boolean validateToken(String token, String user) {
+        return isTokenValidForRole(token, user);
     }
 
     /**

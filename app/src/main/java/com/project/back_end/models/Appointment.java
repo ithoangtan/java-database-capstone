@@ -1,7 +1,6 @@
 package com.project.back_end.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
@@ -52,9 +51,7 @@ public class Appointment {
     //    - Type: private LocalDateTime
     //    - Description:
     //      - Represents the date and time when the appointment is scheduled to occur.
-    //      - The @Future annotation ensures that the appointment time is always in the future when the appointment is created.
-    //      - It uses LocalDateTime, which includes both the date and time for the appointment.
-    @Future
+    //      - No @Future here so past/completed appointments can be persisted; enforce "future only" in API/DTO or service when booking.
     @Column(name = "appointment_time", nullable = false)
     private LocalDateTime appointmentTime;
 

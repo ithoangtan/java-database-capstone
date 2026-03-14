@@ -25,11 +25,14 @@ class DoctorServiceTest {
     @Mock
     private AppointmentRepository appointmentRepository;
 
+    @Mock
+    private TokenService tokenService;
+
     private DoctorService doctorService;
 
     @BeforeEach
     void setUp() {
-        doctorService = new DoctorService(doctorRepository, appointmentRepository);
+        doctorService = new DoctorService(doctorRepository, appointmentRepository, tokenService);
     }
 
     @Test

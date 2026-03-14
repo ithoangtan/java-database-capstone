@@ -17,7 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
@@ -65,7 +67,7 @@ class PrescriptionControllerTest {
 
     @Test
     void savePrescription_returns401_whenTokenInvalid() throws Exception {
-        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(Map.of("error", "Invalid"));
+        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired token")));
         Prescription prescription = validPrescription();
         prescription.setAppointmentId(1L);
 
@@ -77,7 +79,7 @@ class PrescriptionControllerTest {
 
     @Test
     void savePrescription_returns400_whenAppointmentIdNull() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         Prescription prescription = validPrescription();
         prescription.setAppointmentId(null);
 
@@ -85,13 +87,12 @@ class PrescriptionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(prescription)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors").exists())
-                .andExpect(jsonPath("$.errors.appointmentId").exists());
+                .andExpect(jsonPath("$.message").value("must not be null"));
     }
 
     @Test
     void savePrescription_returns400_whenAlreadyExists() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         Prescription prescription = validPrescription();
         prescription.setAppointmentId(1L);
         when(prescriptionService.savePrescription(any(Prescription.class))).thenReturn(null);
@@ -106,7 +107,7 @@ class PrescriptionControllerTest {
 
     @Test
     void savePrescription_returns201_whenSuccess() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         Prescription prescription = validPrescription();
         prescription.setAppointmentId(1L);
         Prescription saved = validPrescription();
@@ -125,7 +126,7 @@ class PrescriptionControllerTest {
 
     @Test
     void updatePrescription_returns401_whenTokenInvalid() throws Exception {
-        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(Map.of("error", "Invalid"));
+        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired token")));
         Prescription prescription = validPrescription();
         prescription.setId("pres-1");
         prescription.setAppointmentId(1L);
@@ -138,7 +139,7 @@ class PrescriptionControllerTest {
 
     @Test
     void updatePrescription_returns400_whenIdMissing() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         Prescription prescription = validPrescription();
         prescription.setId(null);
         prescription.setAppointmentId(1L);
@@ -152,7 +153,7 @@ class PrescriptionControllerTest {
 
     @Test
     void updatePrescription_returns404_whenNotFound() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         Prescription prescription = validPrescription();
         prescription.setId("pres-1");
         prescription.setAppointmentId(1L);
@@ -167,7 +168,7 @@ class PrescriptionControllerTest {
 
     @Test
     void updatePrescription_returns200_whenSuccess() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         Prescription prescription = validPrescription();
         prescription.setId("pres-1");
         prescription.setAppointmentId(1L);
@@ -183,7 +184,7 @@ class PrescriptionControllerTest {
 
     @Test
     void getPrescription_returns401_whenTokenInvalid() throws Exception {
-        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(Map.of("error", "Invalid"));
+        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired token")));
 
         mockMvc.perform(get("/prescription/1/bad-token"))
                 .andExpect(status().isUnauthorized());
@@ -191,7 +192,7 @@ class PrescriptionControllerTest {
 
     @Test
     void getPrescription_returns200_withList() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         when(prescriptionService.getPrescriptionByAppointmentId(1L)).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/prescription/1/valid-token"))
@@ -201,7 +202,7 @@ class PrescriptionControllerTest {
 
     @Test
     void getPrescription_returns500_whenServiceThrows() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         when(prescriptionService.getPrescriptionByAppointmentId(1L)).thenThrow(new RuntimeException("DB error"));
 
         mockMvc.perform(get("/prescription/1/valid-token"))

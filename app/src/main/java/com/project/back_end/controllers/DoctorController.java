@@ -10,7 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,10 +33,44 @@ public class DoctorController {
         this.service = service;
     }
 
+    @GetMapping("/availability/{user}/{doctorId}/{date}/{token}")
+    public ResponseEntity<Map<String, Object>> getDoctorAvailability(
+            @PathVariable String user,
+            @PathVariable Long doctorId,
+            @PathVariable String date,
+            @PathVariable String token) {
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, user);
+        if (tr.getStatusCode().isError()) {
+            Map<String, Object> err = new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of());
+            err.put("slots", List.of());
+            return ResponseEntity.status(tr.getStatusCode()).body(err);
+        }
+        LocalDate parsedDate;
+        try {
+            parsedDate = LocalDate.parse(date);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid date format", "slots", List.of()));
+        }
+        List<String> slots = doctorService.getDoctorAvailability(doctorId, parsedDate);
+        return ResponseEntity.ok(Map.of("slots", slots != null ? slots : List.of()));
+    }
+
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllDoctors() {
         List<Doctor> doctors = doctorService.getDoctors();
         return ResponseEntity.ok(Map.of("doctors", doctors != null ? doctors : List.of()));
+    }
+
+    @GetMapping("/filter/{name}/{time}/{speciality}")
+    public ResponseEntity<Map<String, Object>> filterDoctorsByPath(
+            @PathVariable String name,
+            @PathVariable String time,
+            @PathVariable String speciality) {
+        String n = "null".equalsIgnoreCase(name) ? null : name;
+        String t = "null".equalsIgnoreCase(time) ? null : time;
+        String s = "null".equalsIgnoreCase(speciality) ? null : speciality;
+        Map<String, Object> result = service.filterDoctor(n, s, t);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/filter")
@@ -48,24 +84,16 @@ public class DoctorController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> doctorLogin(@RequestBody Login login) {
-        if (login == null || login.getEmail() == null || login.getEmail().isBlank() || login.getPassword() == null || login.getPassword().isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Email and password are required."));
-        }
-        Doctor doctor = doctorRepository.findByEmail(login.getEmail().trim());
-        if (doctor == null || !login.getPassword().equals(doctor.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid credentials. Please try again."));
-        }
-        String token = tokenService.generateToken(doctor.getEmail());
-        return ResponseEntity.ok(Map.of("token", token));
+        ResponseEntity<Map<String, String>> r = doctorService.validateDoctor(login);
+        Map<String, Object> body = r.getBody() != null ? new HashMap<>(r.getBody()) : new HashMap<>();
+        return ResponseEntity.status(r.getStatusCode()).body(body);
     }
 
     @PostMapping("/{token}")
     public ResponseEntity<Map<String, Object>> addDoctor(@PathVariable String token, @RequestBody Map<String, Object> body) {
-        if (!service.validateToken(token, "admin").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token."));
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "admin");
+        if (tr.getStatusCode().isError()) {
+            return ResponseEntity.status(tr.getStatusCode()).body(new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of()));
         }
         String name = body != null && body.get("name") != null ? body.get("name").toString().trim() : null;
         String email = body != null && body.get("email") != null ? body.get("email").toString().trim() : null;
@@ -120,26 +148,72 @@ public class DoctorController {
         doctor.setAvailableTimes(availableTimes);
         int result = doctorService.saveDoctor(doctor);
         if (result == 1) {
-            return ResponseEntity.ok(Map.of("message", "Doctor added successfully."));
+            return ResponseEntity.ok(Map.of("message", "Doctor added to db"));
         }
         if (result == -1) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "A doctor with this email already exists."));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Doctor already exists"));
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Failed to add doctor."));
     }
 
+    @PutMapping("/{token}")
+    public ResponseEntity<Map<String, Object>> updateDoctor(@PathVariable String token, @RequestBody Map<String, Object> body) {
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "admin");
+        if (tr.getStatusCode().isError()) {
+            return ResponseEntity.status(tr.getStatusCode()).body(new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of()));
+        }
+        Object idObj = body != null ? body.get("id") : null;
+        if (idObj == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Doctor not found"));
+        }
+        Long id = idObj instanceof Number ? ((Number) idObj).longValue() : Long.parseLong(idObj.toString());
+        Doctor existing = doctorRepository.findById(id).orElse(null);
+        if (existing == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Doctor not found"));
+        }
+        String name = body.get("name") != null ? body.get("name").toString().trim() : existing.getName();
+        String email = body.get("email") != null ? body.get("email").toString().trim() : existing.getEmail();
+        String password = body.get("password") != null ? body.get("password").toString() : existing.getPassword();
+        String specialty = body.get("specialty") != null ? body.get("specialty").toString().trim() : existing.getSpecialty();
+        String phone = body.get("phone") != null ? body.get("phone").toString().trim().replaceAll("[^0-9]", "") : existing.getPhone();
+        if (phone.length() != 10) phone = existing.getPhone();
+        List<String> availableTimes = existing.getAvailableTimes();
+        if (body.get("availableTimes") instanceof List) {
+            availableTimes = new ArrayList<>();
+            for (Object o : (List<?>) body.get("availableTimes")) {
+                if (o != null) availableTimes.add(o.toString());
+            }
+        }
+        Doctor doctor = new Doctor();
+        doctor.setId(id);
+        doctor.setName(name);
+        doctor.setEmail(email);
+        doctor.setPassword(password);
+        doctor.setSpecialty(specialty);
+        doctor.setPhone(phone);
+        doctor.setAvailableTimes(availableTimes != null ? availableTimes : List.of());
+        int result = doctorService.updateDoctor(doctor);
+        if (result == 1) {
+            return ResponseEntity.ok(Map.of("message", "Doctor updated"));
+        }
+        if (result == -2) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "Doctor already exists"));
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Doctor not found"));
+    }
+
     @DeleteMapping("/{id}/{token}")
     public ResponseEntity<Map<String, Object>> deleteDoctor(@PathVariable Long id, @PathVariable String token) {
-        if (!service.validateToken(token, "admin").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token."));
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "admin");
+        if (tr.getStatusCode().isError()) {
+            return ResponseEntity.status(tr.getStatusCode()).body(new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of()));
         }
         int result = doctorService.deleteDoctor(id);
         if (result == 1) {
-            return ResponseEntity.ok(Map.of("message", "Doctor deleted successfully."));
+            return ResponseEntity.ok(Map.of("message", "Doctor deleted successfully"));
         }
         if (result == -1) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Doctor not found."));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", "Doctor not found with id"));
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Failed to delete doctor."));
     }

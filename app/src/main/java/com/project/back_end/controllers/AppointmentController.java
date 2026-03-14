@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -32,9 +33,10 @@ public class AppointmentController {
     /** Returns the latest appointment date for the doctor (dashboard uses it to preselect date on load). Placed before generic mapping so Spring matches correctly. */
     @GetMapping("/latestDate/{token}")
     public ResponseEntity<Map<String, Object>> getLatestAppointmentDate(@PathVariable String token) {
-        if (!service.validateToken(token, "doctor").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token."));
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "doctor");
+        if (tr.getStatusCode().isError()) {
+            Map<String, Object> err = new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of());
+            return ResponseEntity.status(tr.getStatusCode()).body(err);
         }
         String doctorEmail = tokenService.extractSubject(token);
         if (doctorEmail == null || doctorEmail.isBlank()) {
@@ -58,9 +60,11 @@ public class AppointmentController {
             @PathVariable String date,
             @PathVariable String patientName,
             @PathVariable String token) {
-        if (!service.validateToken(token, "doctor").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token.", "appointments", List.of()));
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "doctor");
+        if (tr.getStatusCode().isError()) {
+            Map<String, Object> err = new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of());
+            err.put("appointments", List.of());
+            return ResponseEntity.status(tr.getStatusCode()).body(err);
         }
         String doctorEmail = tokenService.extractSubject(token);
         if (doctorEmail == null || doctorEmail.isBlank()) {
@@ -85,9 +89,9 @@ public class AppointmentController {
     public ResponseEntity<Map<String, Object>> bookAppointment(
             @PathVariable String token,
             @RequestBody(required = false) Map<String, Object> body) {
-        if (!service.validateToken(token, "patient").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token."));
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "patient");
+        if (tr.getStatusCode().isError()) {
+            return ResponseEntity.status(tr.getStatusCode()).body(new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of()));
         }
         if (body == null || body.isEmpty()) {
             return ResponseEntity.badRequest()
@@ -155,9 +159,9 @@ public class AppointmentController {
     public ResponseEntity<Map<String, Object>> updateAppointment(
             @PathVariable String token,
             @RequestBody(required = false) Map<String, Object> body) {
-        if (!service.validateToken(token, "patient").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token."));
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "patient");
+        if (tr.getStatusCode().isError()) {
+            return ResponseEntity.status(tr.getStatusCode()).body(new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of()));
         }
         if (body == null || body.isEmpty()) {
             return ResponseEntity.badRequest()
@@ -223,6 +227,19 @@ public class AppointmentController {
                     .body(Map.of("message", "Appointment not found, access denied, or slot already taken."));
         }
         return ResponseEntity.ok(Map.of("message", "Appointment updated successfully.", "id", updated.getId()));
+    }
+
+    @DeleteMapping("/{id}/{token}")
+    public ResponseEntity<Map<String, Object>> cancelAppointment(
+            @PathVariable Long id,
+            @PathVariable String token) {
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "patient");
+        if (tr.getStatusCode().isError()) {
+            return ResponseEntity.status(tr.getStatusCode()).body(new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of()));
+        }
+        ResponseEntity<Map<String, String>> result = appointmentService.cancelAppointment(id, token);
+        Map<String, Object> body = result.getBody() != null ? new HashMap<>(result.getBody()) : new HashMap<>();
+        return ResponseEntity.status(result.getStatusCode()).body(body);
     }
 
 // 1. Set Up the Controller Class:

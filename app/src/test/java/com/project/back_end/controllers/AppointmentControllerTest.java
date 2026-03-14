@@ -16,7 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -67,16 +69,16 @@ class AppointmentControllerTest {
 
     @Test
     void getLatestAppointmentDate_returns401_whenTokenInvalid() throws Exception {
-        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(Map.of("error", "Invalid"));
+        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired token")));
 
         mockMvc.perform(get("/appointments/latestDate/bad-token"))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid or expired token."));
+                .andExpect(jsonPath("$.message").value("Invalid or expired token"));
     }
 
     @Test
     void getLatestAppointmentDate_returns200_withEmptyDate_whenNoAppointments() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         when(tokenService.extractSubject("valid-token")).thenReturn("doctor@test.com");
         when(appointmentService.getLatestAppointmentDateForDoctor("doctor@test.com")).thenReturn(Optional.empty());
 
@@ -87,7 +89,7 @@ class AppointmentControllerTest {
 
     @Test
     void getLatestAppointmentDate_returns200_withDate_whenHasAppointments() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         when(tokenService.extractSubject("valid-token")).thenReturn("doctor@test.com");
         when(appointmentService.getLatestAppointmentDateForDoctor("doctor@test.com"))
                 .thenReturn(Optional.of(LocalDate.of(2025, 3, 14)));
@@ -99,7 +101,7 @@ class AppointmentControllerTest {
 
     @Test
     void getAppointments_returns401_whenTokenInvalid() throws Exception {
-        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(Map.of("error", "Invalid"));
+        when(service.validateToken(eq("bad-token"), eq("doctor"))).thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired token")));
 
         mockMvc.perform(get("/appointments/2025-03-14/John/bad-token"))
                 .andExpect(status().isUnauthorized());
@@ -107,7 +109,7 @@ class AppointmentControllerTest {
 
     @Test
     void getAppointments_returns400_whenDateInvalid() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         when(tokenService.extractSubject("valid-token")).thenReturn("doctor@test.com");
 
         mockMvc.perform(get("/appointments/not-a-date/null/valid-token"))
@@ -117,7 +119,7 @@ class AppointmentControllerTest {
 
     @Test
     void getAppointments_returns200_withAppointments() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("doctor"))).thenReturn(ResponseEntity.ok(Map.of()));
         when(tokenService.extractSubject("valid-token")).thenReturn("doctor@test.com");
         when(appointmentService.getAppointmentsForDoctor(eq("doctor@test.com"), any(), any())).thenReturn(Collections.emptyList());
 
@@ -128,7 +130,7 @@ class AppointmentControllerTest {
 
     @Test
     void bookAppointment_returns401_whenTokenInvalid() throws Exception {
-        when(service.validateToken(eq("bad-token"), eq("patient"))).thenReturn(Map.of("error", "Invalid"));
+        when(service.validateToken(eq("bad-token"), eq("patient"))).thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired token")));
         Map<String, Object> body = Map.of(
                 "doctor", Map.of("id", 1),
                 "patient", Map.of("id", 2),
@@ -143,7 +145,7 @@ class AppointmentControllerTest {
 
     @Test
     void bookAppointment_returns400_whenBodyEmpty() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(ResponseEntity.ok(Map.of()));
 
         mockMvc.perform(post("/appointments/valid-token")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -154,7 +156,7 @@ class AppointmentControllerTest {
 
     @Test
     void bookAppointment_returns400_whenDoctorIdMissing() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(ResponseEntity.ok(Map.of()));
         Map<String, Object> body = Map.of(
                 "patient", Map.of("id", 2),
                 "appointmentTime", "2025-03-14T09:00:00"
@@ -169,7 +171,7 @@ class AppointmentControllerTest {
 
     @Test
     void bookAppointment_returns409_whenDuplicateSlot() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(ResponseEntity.ok(Map.of()));
         Map<String, Object> body = Map.of(
                 "doctor", Map.of("id", 1),
                 "patient", Map.of("id", 2),
@@ -186,7 +188,7 @@ class AppointmentControllerTest {
 
     @Test
     void bookAppointment_returns400_whenDoctorOrPatientNotFound() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(ResponseEntity.ok(Map.of()));
         Map<String, Object> body = Map.of(
                 "doctor", Map.of("id", 1),
                 "patient", Map.of("id", 2),
@@ -204,7 +206,7 @@ class AppointmentControllerTest {
 
     @Test
     void bookAppointment_returns201_whenSuccess() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(ResponseEntity.ok(Map.of()));
         Map<String, Object> body = Map.of(
                 "doctor", Map.of("id", 1),
                 "patient", Map.of("id", 2),
@@ -225,7 +227,7 @@ class AppointmentControllerTest {
 
     @Test
     void updateAppointment_returns401_whenTokenInvalid() throws Exception {
-        when(service.validateToken(eq("bad-token"), eq("patient"))).thenReturn(Map.of("error", "Invalid"));
+        when(service.validateToken(eq("bad-token"), eq("patient"))).thenReturn(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid or expired token")));
         Map<String, Object> body = Map.of(
                 "id", 1,
                 "doctor", Map.of("id", 1),
@@ -241,7 +243,7 @@ class AppointmentControllerTest {
 
     @Test
     void updateAppointment_returns400_whenAppointmentIdMissing() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(ResponseEntity.ok(Map.of()));
         Map<String, Object> body = Map.of(
                 "doctor", Map.of("id", 1),
                 "patient", Map.of("id", 2),
@@ -257,7 +259,7 @@ class AppointmentControllerTest {
 
     @Test
     void updateAppointment_returns400_whenNotFoundOrDenied() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(ResponseEntity.ok(Map.of()));
         Map<String, Object> body = Map.of(
                 "id", 1,
                 "doctor", Map.of("id", 1),
@@ -275,7 +277,7 @@ class AppointmentControllerTest {
 
     @Test
     void updateAppointment_returns200_whenSuccess() throws Exception {
-        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(Map.of());
+        when(service.validateToken(eq("valid-token"), eq("patient"))).thenReturn(ResponseEntity.ok(Map.of()));
         Map<String, Object> body = Map.of(
                 "id", 1,
                 "doctor", Map.of("id", 1),

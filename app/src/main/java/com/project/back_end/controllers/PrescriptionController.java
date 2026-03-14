@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,9 +32,9 @@ public class PrescriptionController {
     public ResponseEntity<Map<String, Object>> savePrescription(
             @Valid @RequestBody Prescription prescription,
             @PathVariable String token) {
-        if (!service.validateToken(token, "doctor").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token."));
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "doctor");
+        if (tr.getStatusCode().isError()) {
+            return ResponseEntity.status(tr.getStatusCode()).body(new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of()));
         }
         if (prescription.getAppointmentId() == null) {
             return ResponseEntity.badRequest()
@@ -53,9 +54,9 @@ public class PrescriptionController {
     public ResponseEntity<Map<String, Object>> updatePrescription(
             @Valid @RequestBody Prescription prescription,
             @PathVariable String token) {
-        if (!service.validateToken(token, "doctor").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token."));
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "doctor");
+        if (tr.getStatusCode().isError()) {
+            return ResponseEntity.status(tr.getStatusCode()).body(new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of()));
         }
         if (prescription.getId() == null || prescription.getId().isBlank()) {
             return ResponseEntity.badRequest()
@@ -73,9 +74,11 @@ public class PrescriptionController {
     public ResponseEntity<Map<String, Object>> getPrescription(
             @PathVariable Long appointmentId,
             @PathVariable String token) {
-        if (!service.validateToken(token, "doctor").isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired token.", "prescription", List.of()));
+        ResponseEntity<Map<String, String>> tr = service.validateToken(token, "doctor");
+        if (tr.getStatusCode().isError()) {
+            Map<String, Object> err = new HashMap<>(tr.getBody() != null ? tr.getBody() : Map.of());
+            err.put("prescription", List.of());
+            return ResponseEntity.status(tr.getStatusCode()).body(err);
         }
         try {
             List<Prescription> list = prescriptionService.getPrescriptionByAppointmentId(appointmentId);
