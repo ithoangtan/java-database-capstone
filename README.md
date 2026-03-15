@@ -17,9 +17,10 @@ Clinic management system (Spring Boot, MySQL, MongoDB).
 
 1. **Start MySQL and MongoDB** on your machine (ports 3306 and 27017).
 
-2. **Configure databases** (if needed): edit `app/src/main/resources/application.properties`:
-   - MySQL: database `cms`, user `root`, password (if any)
-   - MongoDB: URI `mongodb://localhost:27017/prescriptions`
+2. **Database config** is read from **environment variables**. If you don’t set any, defaults in `application.properties` are used:
+   - MySQL: `localhost:3306`, database `cms`, user `root`, password (empty by default)
+   - MongoDB: `mongodb://localhost:27017/prescriptions`
+   - To override: set `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `SPRING_DATA_MONGODB_URI` in your shell or IDE before running.
 
 3. **Run the application:**
 
@@ -43,38 +44,21 @@ Clinic management system (Spring Boot, MySQL, MongoDB).
 
 #### Backend only (MySQL and MongoDB must be running elsewhere)
 
-1. **Build the image:**
+The app needs DB environment variables inside the container. Copy `app/.env.example` to `app/.env` and use `--env-file .env` when running.
+
+1. **Create `.env`** in `app/`: copy `app/.env.example` to `app/.env`, edit host/user/password if needed.
+
+2. **Build and run** (from the `app` directory):
 
    ```bash
    cd app
    docker build -t smart-clinic-backend .
+   docker run -d -p 8080:8080 --env-file .env --name smart-clinic smart-clinic-backend
    ```
 
-2. **Run the container** (mapping port 8080):
+3. Open **http://localhost:8080**
 
-   ```bash
-   docker run -d -p 8080:8080 --name smart-clinic smart-clinic-backend
-   ```
-
-   If the backend needs to connect to MySQL/MongoDB on the host:
-
-   ```bash
-   docker run -d -p 8080:8080 \
-     -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/cms \
-     -e SPRING_DATASOURCE_USERNAME=root \
-     -e SPRING_DATASOURCE_PASSWORD= \
-     -e SPRING_DATA_MONGODB_URI=mongodb://host.docker.internal:27017/prescriptions \
-     --name smart-clinic smart-clinic-backend
-   ```
-
-3. Open: **http://localhost:8080**
-
-4. **Stop and remove the container:**
-
-   ```bash
-   docker stop smart-clinic
-   docker rm smart-clinic
-   ```
+4. **Stop and remove container:** `docker stop smart-clinic` then `docker rm smart-clinic`
 
 #### Backend + MySQL + MongoDB (Docker Compose)
 
@@ -85,11 +69,10 @@ Clinic management system (Spring Boot, MySQL, MongoDB).
    docker compose up -d
    ```
 
-   The first run will build the backend image and pull MySQL and MongoDB images.
+   The first run will build the backend image and pull MySQL and MongoDB images. All database settings come from **environment variables** (with defaults). To override, create a `.env` file in `app/` or export variables before `docker compose up` — see `app/.env.example` for variable names.
 
 2. App: **http://localhost:8080**  
-   MySQL: `localhost:3306` (user `root`, password `root`, database `mydb`)  
-   MongoDB: `localhost:27017` (database `my_mongo_db`)
+   With defaults: MySQL `localhost:3306` (user `root`, password `root`, database `mydb`), MongoDB `localhost:27017` (database `my_mongo_db`)
 
 3. **Stop and remove:**
 
@@ -106,7 +89,7 @@ Clinic management system (Spring Boot, MySQL, MongoDB).
 |----------------------|---------|
 | Run with Maven       | `cd app` → `./mvnw spring-boot:run` |
 | Build Docker image   | `cd app` → `docker build -t smart-clinic-backend .` |
-| Run backend container | `docker run -d -p 8080:8080 --name smart-clinic smart-clinic-backend` |
+| Run backend container | From `app/`: create `.env` from `.env.example`, then `docker run -d -p 8080:8080 --env-file .env --name smart-clinic smart-clinic-backend` |
 | Run full stack       | `cd app` → `docker compose up -d` |
 | Stop container       | `docker stop smart-clinic` |
 | Stop Compose         | `cd app` → `docker compose down` |

@@ -1,3 +1,4 @@
+# Database settings: from environment (e.g. GitHub Actions vars/secrets). No .env required. Defaults used if unset.
 version: "3.8"
 
 services:
@@ -12,10 +13,10 @@ services:
       mongodb:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/mydb
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/my_mongo_db
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:mysql://mysql:3306/mydb?useSSL=false}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-root}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-root}
+      SPRING_DATA_MONGODB_URI: ${SPRING_DATA_MONGODB_URI:-mongodb://mongodb:27017/my_mongo_db}
 
   mysql:
     image: mysql:8.0
@@ -23,10 +24,10 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: mydb
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mydb}
     healthcheck:
-      test: ["CMD", "mysql", "-uroot", "-proot", "-e", "SELECT 1"]
+      test: ["CMD", "mysql", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}", "-e", "SELECT 1"]
       interval: 10s
       timeout: 5s
       retries: 5
