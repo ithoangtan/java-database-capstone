@@ -26,6 +26,9 @@ When you deploy your app to the cloud (Railway, Render, Fly.io, etc.), there is 
 
 - `SPRING_DATA_MONGODB_URI=<the string above>`
 
+### Result
+https://cloud.mongodb.com/v2/5de01895014b7608bc604897#/clusters/connect?clusterId=Cluster0 
+
 ---
 
 ## 2. MySQL Online (Lightweight Options)
@@ -45,6 +48,9 @@ The app expects **MySQL 8** (or compatible). Choose one of the options below.
 - `SPRING_DATASOURCE_URL=jdbc:mysql://<host>:<port>/<database>?useSSL=true`
 - `SPRING_DATASOURCE_USERNAME=<user>`
 - `SPRING_DATASOURCE_PASSWORD=<password>`
+
+### Result
+https://railway.com/project/a2a68241-f159-49c3-88c7-9136d4f15a62/service/14d4ef25-ec28-4d0a-8958-f64e246625f4/variables?environmentId=560f319c-e0a6-468f-9820-0570f8fbcf12
 
 ### B. PlanetScale (MySQL-Compatible, Limited Free Tier)
 
